@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+ .auth-button-red {
+   background-color: #e50914 !important;
+   color: white !important;
+   padding: 8px 16px !important;
+   border-radius: 4px !important;
+   text-decoration: none !important;
+   font-weight: 600 !important;
+   transition: background-color 0.3s ease !important;
+ }
+
+ .auth-button-red:hover {
+   background-color: #f40612 !important;
+   text-decoration: none !important;
+ }
+
+ .auth-button-red:visited,
+ .auth-button-red:link {
+   color: white !important;
+ }
