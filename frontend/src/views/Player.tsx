@@ -1,14 +1,12 @@
 function Player() {
   return (
-    <div className="player">
-      <div className="player__controls">
-        <button className="player__button">Play</button>
-        <button className="player__button">Pause</button>
-        <button className="player__button">Stop</button>
+    <div id="player" className="flex w-full h-full">
+      <div id="content" className="flex flex-col w-3/4">
+        <div id="video" className="flex">video</div>
+        <div id="title-description" className="flex">title</div>
+        <div id="comments" className="flex">comments</div>
       </div>
-      <div className="player__progress">
-        <div className="player__progress__bar"></div>
-      </div>
+      <div id="sidebar" className="w-1/4">recommendations</div>
     </div>
   );
 }
