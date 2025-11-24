@@ -1,0 +1,17 @@
+services:
+  xampp:
+    image: tomsik68/xampp:latest
+    container_name: backend.stream.contrapoetra.com
+    ports:
+      - "122:22"
+      - "80:80"
+      - "3306:3306"
+    volumes:
+      - ./htdocs:/www
+      - mysql_data:/opt/lampp/var/mysql/
+      - ./rest:/www/rest
+    environment:
+      MYSQL_ROOT_PASSWORD: i.hate.sequels
+    restart: always
+volumes:
+  mysql_data:
