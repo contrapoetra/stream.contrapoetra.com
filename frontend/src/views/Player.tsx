@@ -2,31 +2,28 @@ import VideoPlayer from '../components/VideoPlayer';
 import VideoThumbnail from '../components/VideoThumbnail';
 import UserComment from '../components/UserComment';
 import { useSearchParams } from 'react-router-dom';
+import { DarkModeContext } from '../context/DarkModeContext';
+import { useContext } from 'react';
 
-interface PlayerProps {
-  videoId?: string;
-  title: string;
-  channel: string;
-}
-
-const margin = 12;
+const margin = "12";
 
 function Player() {
+  const { darkMode } = useContext(DarkModeContext);
   const [searchParams] = useSearchParams();
   const title = searchParams.get('title');
   const channel = searchParams.get('channel');
 
   return (
-    <div id="player" className="flex w-full h-full">
-      <div id="content" className="flex flex-col w-3/4">
+    <div id="player" className={`flex w-full h-full mt-12 ${darkMode ? 'bg-neutral-900 text-neutral-200' : 'bg-neutral-100 text-neutral-900'}`}>
+      <div id="content" className="flex flex-col w-3/4 ml-12">
         <div id="video" className={`flex shrink-0 ml-${margin} mt-5 mb-5 rounded-xl overflow-hidden`}>
           {/* Placeholder */}
           <VideoPlayer/>
         </div>
-        <div id="title" className={`flex ml-${margin} text-3xl font-bold`}>{title}</div>
-        <div id="channel" className={`flex ml-${margin} mt-3`}>{channel}</div>
-        <div id="subscribers" className={`flex ml-${margin} text-sm text-neutral-500`}>1 subscribers</div>
-        <div id="description" className={`flex ml-${margin} mt-5 bg-neutral-100 outline-neutral-200 outline-1 p-4 rounded-xl`}>
+        <div id="title" className={`flex ml-${margin} text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{title}</div>
+        <div id="channel" className={`flex ml-${margin} mt-3 ${darkMode ? 'text-white' : 'text-black'}`}>{channel}</div>
+        <div id="subscribers" className={`flex ml-${margin} text-sm text-neutral-500 ${darkMode ? 'text-white' : 'text-black'}`}>1 subscribers</div>
+        <div id="description" className={`flex ml-${margin} mt-5 ${darkMode ? 'bg-neutral-900 outline-neutral-800' : 'bg-neutral-100 outline-neutral-200'} outline-1 p-4 rounded-xl`}>
           {/* Placeholder */}
           Hey guys what's up this is an animation I directed, with the help of Yuemichi, and other people I forgot their names haha, enjoy! lksdjflksdjfkldsj fklsdjf lkdsjf lkds fklds fkljsdflkdsj fkldsjfksdjfj lksd jflksdjf lkdsjfl ksdjfk ljsdfkl jlsdk fjlksdjflkjdslkf lksd flksjdflkj dslkfjlksdjf lksdj flkdsjf lksj
         </div>

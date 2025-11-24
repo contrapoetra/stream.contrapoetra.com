@@ -19,3 +19,23 @@
  .auth-button-red:link {
    color: white !important;
  }
+
+ .auth-button-dark {
+   background-color: #222 !important;
+   color: white !important;
+   padding: 8px 16px !important;
+   border-radius: 4px !important;
+   text-decoration: none !important;
+   font-weight: 600 !important;
+   transition: background-color 0.3s ease !important;
+ }
+
+ .auth-button-dark:hover {
+   background-color: #222 !important;
+   text-decoration: none !important;
+ }
+
+ .auth-button-dark:visited,
+ .auth-button-dark:link {
+   color: white !important;
+ }
