@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   xampp:
     image: tomsik68/xampp:latest
@@ -8,8 +6,8 @@ services:
       - "8080:80"
       - "3306:3306"
     volumes:
-      - ./php:/www
-      - ./videos:/www/videos
+      - ./php:/opt/lampp/htdocs
+      - ./videos:/opt/lampp/htdocs/videos
       - ./sql:/docker-entrypoint-initdb.d
     environment:
       - MYSQL_ROOT_PASSWORD=root
