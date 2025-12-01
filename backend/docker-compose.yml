@@ -10,6 +10,7 @@ services:
       - ./htdocs:/www
       - mysql_data:/opt/lampp/var/mysql/
       - ./rest:/www/rest
+      - ./php.ini:/opt/lampp/etc/php.ini
     environment:
       MYSQL_ROOT_PASSWORD: i.hate.sequels
     restart: always

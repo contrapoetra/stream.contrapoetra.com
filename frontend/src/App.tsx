@@ -3,7 +3,7 @@ import { DarkModeContext } from './context/DarkModeContext';
 import { useContext } from 'react';
 import Home from './views/Home';
 import Player from './views/Player';
-// import Auth from './views/Auth';
+import Auth from './views/Auth';
 import Streamin from './assets/_streamin.svg';
 import './App.css';
 import { Toggle } from "@/components/ui/toggle"
@@ -37,7 +37,7 @@ function App() {
                 <Player/>
               </div>
             } />
-            {/*<Route path="/auth" element={<Auth />} />*/}
+            <Route path="/auth" element={<Auth />} />
           </Routes>
         </div>
       </Router>
