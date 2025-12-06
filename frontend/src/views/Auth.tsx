@@ -1,6 +1,7 @@
 import { useState, useContext, ChangeEvent, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DarkModeContext } from '../context/DarkModeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface FormData {
   email: string;
@@ -11,7 +12,11 @@ interface FormData {
 
 function Auth() {
   const { darkMode } = useContext(DarkModeContext);
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -27,27 +32,47 @@ function Auth() {
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    if (isLogin) {
-      console.log('Logging in:', {
-        email: formData.email,
-        password: formData.password
-      });
-      // Add your login logic here
-    } else {
-      if (formData.password !== formData.confirmPassword) {
-        alert("Passwords don't match!");
-        return;
+    try {
+      if (isLogin) {
+        // Login
+        const success = await login(formData.email, formData.password);
+
+        if (success) {
+          navigate('/');
+        } else {
+          setError('Invalid email or password');
+        }
+      } else {
+        // Register
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords don't match!");
+          setLoading(false);
+          return;
+        }
+
+        const success = await register(formData.username, formData.email, formData.password);
+
+        if (success) {
+          navigate('/');
+        } else {
+          setError('Registration failed. Email might already be in use.');
+        }
       }
-      console.log('Signing up:', formData);
-      // Add your signup logic here
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const toggleMode = (): void => {
     setIsLogin(!isLogin);
+    setError('');
     // Reset form when switching between login/signup
     setFormData({
       email: '',
@@ -68,6 +93,12 @@ function Auth() {
             {isLogin ? 'Sign in to your account to continue' : 'Sign up to get started with Streamin'}
           </p>
         </div>
+
+        {error && (
+          <div className={`p-3 rounded-lg text-sm ${darkMode ? 'bg-red-900/50 text-red-300 border border-red-800' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isLogin && (
@@ -163,9 +194,20 @@ function Auth() {
 
           <button
             type="submit"
-            className={`w-full py-3 px-4 rounded-lg font-semibold ${darkMode ? 'bg-neutral-600 hover:bg-neutral-700 text-white' : 'bg-neutral-600 hover:bg-neutral-700 text-white'} transition duration-300`}
+            disabled={loading}
+            className={`w-full py-3 px-4 rounded-lg font-semibold transition duration-300 ${loading
+              ? (darkMode ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed' : 'bg-neutral-400 text-neutral-200 cursor-not-allowed')
+              : (darkMode ? 'bg-neutral-600 hover:bg-neutral-700 text-white' : 'bg-neutral-600 hover:bg-neutral-700 text-white')
+            }`}
           >
-            {isLogin ? 'Sign In' : 'Sign Up'}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                {isLogin ? 'Signing In...' : 'Signing Up...'}
+              </div>
+            ) : (
+              isLogin ? 'Sign In' : 'Sign Up'
+            )}
           </button>
         </form>
 

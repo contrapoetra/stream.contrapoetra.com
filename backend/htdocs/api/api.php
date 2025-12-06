@@ -8,6 +8,17 @@ $config = require __DIR__ . '/config.php';
 
 global $pdo;
 
+// CORS headers for frontend
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Handle OPTIONS preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 // Basic router: use ?action=...
 $action = $_GET['action'] ?? null;
 $method = $_SERVER['REQUEST_METHOD'];

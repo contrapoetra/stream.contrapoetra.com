@@ -3,67 +3,131 @@ import VideoThumbnail from '../components/VideoThumbnail';
 import UserComment from '../components/UserComment';
 import { useSearchParams } from 'react-router-dom';
 import { DarkModeContext } from '../context/DarkModeContext';
-import { useContext } from 'react';
-
-const margin = "12";
+import { useContext, useEffect, useState } from 'react';
+import apiService from '../services/api';
 
 function Player() {
   const { darkMode } = useContext(DarkModeContext);
   const [searchParams] = useSearchParams();
-  const title = searchParams.get('title');
-  const channel = searchParams.get('channel');
+  const videoId = searchParams.get('id');
 
-  return (
-    <div id="player" className={`flex w-full h-full mt-12 ${darkMode ? 'bg-neutral-900 text-neutral-200' : 'bg-neutral-100 text-neutral-900'}`}>
-      <div id="content" className="flex flex-col w-3/4 ml-12">
-        <div id="video" className={`flex shrink-0 ml-${margin} mt-5 mb-5 rounded-xl overflow-hidden`}>
-          {/* Placeholder */}
-          <VideoPlayer/>
-        </div>
-        <div id="title" className={`flex ml-${margin} text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{title}</div>
-        <div id="channel" className={`flex ml-${margin} mt-3 ${darkMode ? 'text-white' : 'text-black'}`}>{channel}</div>
-        <div id="subscribers" className={`flex ml-${margin} text-sm text-neutral-500 ${darkMode ? 'text-white' : 'text-black'}`}>1 subscribers</div>
-        <div id="description" className={`flex ml-${margin} mt-5 ${darkMode ? 'bg-neutral-900 outline-neutral-800' : 'bg-neutral-100 outline-neutral-200'} outline-1 p-4 rounded-xl`}>
-          {/* Placeholder */}
-          Hey guys what's up this is an animation I directed, with the help of Yuemichi, and other people I forgot their names haha, enjoy! lksdjflksdjfkldsj fklsdjf lkdsjf lkds fklds fkljsdflkdsj fkldsjfksdjfj lksd jflksdjf lkdsjfl ksdjfk ljsdfkl jlsdk fjlksdjflkjdslkf lksd flksjdflkj dslkfjlksdjf lksdj flkdsjf lksj
-        </div>
-        <div className={`text-2xl font-bold ml-${margin} mt-5`}>Comments</div>
-        <div id="comments" className={`flex flex-col ml-${margin} mt-5`}>
-          {/* Placeholder */}
-          <UserComment user="yuemichi" comment="this is so ass bro!!! 🥀" />
-          <UserComment user="sunnydrop" comment="ngl this kinda ate?? ✨" />
-          <UserComment user="voidling" comment="bro what did my eyes just witness 😭😭" />
-          <UserComment user="peachmoss" comment="ok but why is nobody talking about how cute this is??" />
-          <UserComment user="crankedsoda" comment="this feels like a crime but I'm lowkey entertained" />
-          <UserComment user="m1dn1ght" comment="I’m not saying it’s bad but… actually yeah it’s bad 💀" />
-          <UserComment user="ghosttoast" comment="chef’s kiss, keep going king/queen/non-royalty 👑" />
-          <UserComment user="trashfire" comment="this belongs in a museum labeled ‘please don’t touch or look at it’ 😭" />
-          <UserComment user="mintyfresh" comment="you tried and honestly that’s kinda wholesome 🫶" />
-          <UserComment user="pixelgremlin" comment="why does this go so hard for no reason??" />
-          <UserComment user="ratmode" comment="I opened this and my phone immediately lost battery 💀🔋" />
-          <UserComment user="cloudberry" comment="I actually love this sm, don’t listen to anyone 😤" />
-          <UserComment user="brickhouse" comment="bro I’ve seen loading screens with more personality" />
-          <UserComment user="starlitwing" comment="this has so much potential, keep at it!" />
-          <UserComment user="glitchsniff" comment="my disappointment is measurable and my day is ruined 💔" />
-          <UserComment user="puddlejumper" comment="aww this is adorable, keep going!" />
+  const [video, setVideo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchVideoData = async () => {
+      if (!videoId) {
+        setError('No video ID provided');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        // Fetch main video
+        const videoResponse = await apiService.getVideo(parseInt(videoId));
+
+        if (videoResponse.video) {
+          setVideo(videoResponse.video);
+        } else {
+          setError('Video not found');
+          return;
+        }
+
+        // Fetch related videos (latest videos)
+        const relatedResponse = await apiService.getVideos(1, 10);
+        if (relatedResponse.videos) {
+          // Filter out current video from related
+          const filtered = relatedResponse.videos.filter(v => v.video_id !== parseInt(videoId));
+          setRelatedVideos(filtered.slice(0, 8));
+        }
+
+      } catch (err) {
+        console.error('Error fetching video:', err);
+        setError('Failed to load video');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideoData();
+  }, [videoId]);
+
+  if (loading) {
+    return (
+      <div className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
+        <div className="text-xl">Loading video...</div>
+      </div>
+    );
+  }
+
+  if (error || !video) {
+    return (
+      <div className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
+        <div className="text-center">
+          <div className="text-xl text-red-500 mb-4">{error || 'Video not found'}</div>
+          <a href="/" className="text-blue-500 hover:underline">Back to Home</a>
         </div>
       </div>
-      <div id="sidebar" className="w-1/4 h-full mt-5">
-        <VideoThumbnail title="How I Accidentally Broke the Internet" channel="TechGoblin" />
-        <VideoThumbnail title="10-Min Speedrun of Absolute Nonsense" channel="ChaosCentral" />
-        <VideoThumbnail title="Why My Cat Hates Gravity" channel="FelixFiles" />
-        <VideoThumbnail title="Making a Sandwich Blindfolded (Disaster)" channel="SnackAttackTV" />
-        <VideoThumbnail title="I Tried Learning Piano in 24 Hours" channel="NoteNerd" />
-        <VideoThumbnail title="The Deep Lore Behind My Toaster" channel="ApplianceLore" />
-        <VideoThumbnail title="Ranking Every Cereal From Painful to Legendary" channel="BreakfastBros" />
-        <VideoThumbnail title="Reacting to My Old Cringe Posts" channel="VintageEmbarrassment" />
-        <VideoThumbnail title="I Turned My Room Into a Jungle" channel="LeafLord" />
-        <VideoThumbnail title="You Won’t Believe What’s Under My Bed" channel="MysteryMuncher" />
-        <VideoThumbnail title="Trying Viral TikTok Hacks So You Don’t Have To" channel="HackOrWack" />
-        <VideoThumbnail title="I Built a PC Out of Pure Spite" channel="SaltyEngineer" />
-        <VideoThumbnail title="The Day My Dog Learned Betrayal" channel="PawDrama" />
-        <VideoThumbnail title="Is Water Wet? A Scientific Meltdown" channel="BrainCellMinusOne" />
-        <VideoThumbnail title="This Game Made Me Question Reality" channel="PixelPanic" />
+    );
+  }
+
+  const getVideoUrl = () => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/api';
+    return `${baseUrl}/${video.file_path}`;
+  };
+
+  return (
+    <div id="player" className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
+      <div id="content" className="flex flex-col w-3/4 ml-12">
+        <div id="video" className="flex shrink-0 ml-12 mt-5 mb-5 rounded-xl overflow-hidden">
+          <VideoPlayer
+            src={getVideoUrl()}
+            title={video.title}
+          />
+        </div>
+
+        <div className="ml-12">
+          <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
+          <div className="flex items-center gap-4 mt-3">
+            <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
+            <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {video.views?.toLocaleString() || 0} views • Just now
+            </span>
+          </div>
+
+          {video.description && (
+            <div className={`mt-5 p-4 rounded-xl ${darkMode ? 'bg-neutral-900 border border-neutral-800' : 'bg-neutral-100 border border-neutral-200'}`}>
+              <p className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.description}</p>
+            </div>
+          )}
+
+          <div className={`text-2xl font-bold mt-5 ${darkMode ? 'text-white' : 'text-black'}`}>Comments</div>
+          <div id="comments" className="flex flex-col mt-5">
+            <UserComment user="yuemichi" comment="this is so ass bro!!! 🥀" />
+            <UserComment user="sunnydrop" comment="ngl this kinda ate?? ✨" />
+            <UserComment user="voidling" comment="bro what did my eyes just witness 😭😭" />
+          </div>
+        </div>
+      </div>
+
+      <div id="sidebar" className="w-1/4 min-h-screen mt-5 sticky top-0">
+        <h3 className={`text-lg font-semibold mb-4 ml-2 ${darkMode ? 'text-white' : 'text-black'}`}>Related Videos</h3>
+        <div className="space-y-3">
+          {relatedVideos.map((relatedVideo) => (
+            <VideoThumbnail
+              key={relatedVideo.video_id}
+              videoId={relatedVideo.video_id}
+              title={relatedVideo.title}
+              channel={relatedVideo.username}
+              views={relatedVideo.views}
+              thumbnailPath={relatedVideo.thumbnail_path}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
