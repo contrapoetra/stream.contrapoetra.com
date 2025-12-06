@@ -102,13 +102,7 @@ function Channel() {
     <div className={`min-h-screen w-full ${darkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-black'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Channel Banner */}
-        <div className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl overflow-hidden mb-6">
-          {/* Placeholder for actual banner implementation */}
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-            <span className="text-4xl font-bold text-white drop-shadow-lg">{channel.username}</span>
-          </div>
-        </div>
+
 
         {/* Channel Header */}
         <div className="flex items-center justify-between mb-8 flex-wrap">
