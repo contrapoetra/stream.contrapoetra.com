@@ -2,24 +2,35 @@ import VideoThumbnail from "../components/VideoThumbnail";
 import { DarkModeContext } from "../context/DarkModeContext";
 import { useContext, useEffect, useState } from "react";
 import apiService from "../services/api";
-import { Link } from 'react-router-dom';
-import { Home as HomeIcon, Rss } from 'lucide-react';
+import { useLocation, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Home as HomeIcon, Rss } from "lucide-react";
 
 function Home() {
   const { darkMode } = useContext(DarkModeContext);
+  const { user: currentUser } = useAuth();
+  const location = useLocation();
+  const isSubscriptions = location.pathname === '/subscriptions';
+
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchVideos = async () => {
+      if (isSubscriptions && !currentUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await apiService.getVideos(1, 16);
+        // Pass mode='subscribed' if on subscriptions page
+        const response = await apiService.getVideos(1, 16, undefined, isSubscriptions ? 'subscribed' : 'all');
 
         if (response.videos) {
           setVideos(response.videos);
-          setError(null); // Clear error on success
+          setError(null);
         } else {
           setError("No videos available");
         }
@@ -32,7 +43,7 @@ function Home() {
     };
 
     fetchVideos();
-  }, []);
+  }, [isSubscriptions, currentUser]);
 
   return (
     <>
@@ -41,7 +52,7 @@ function Home() {
       >
         <div
           id="sidebar"
-          className={`${darkMode ? "bg-neutral-950" : "bg-neutral-50"} w-1/5 min-h-screen p-4 flex-shrink-0 shadow-md`}
+          className={`${darkMode ? "bg-neutral-950" : "bg-neutral-50"} w-1/5 min-h-screen p-4 flex-shrink-0 shadow-md sticky top-0`}
         >
           <ul className="space-y-2">
             <li>
@@ -62,13 +73,18 @@ function Home() {
           {/* Error Message */}
           {error && (
             <div
-              className={`${darkMode ? "bg-neutral-900" : "bg-white"} p-4 border-b ${darkMode ? "border-neutral-700" : "border-neutral-200"}`}
+              className={`${darkMode ? "bg-neutral-900" : "bg-white"} p-4 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
             >
               <div className="p-2 bg-red-500 text-white rounded">
                 {error} - Make sure backend server is running!
               </div>
             </div>
           )}
+
+          {/* Title Header */}
+          <div className="p-4 pb-0">
+            <h2 className="text-2xl font-bold">{isSubscriptions ? 'Subscriptions' : 'Recommended'}</h2>
+          </div>
 
           {/* Loading State */}
           {loading && (
@@ -77,8 +93,18 @@ function Home() {
             </div>
           )}
 
+          {/* Not Logged In State for Subscriptions */}
+          {isSubscriptions && !currentUser && !loading && (
+            <div className="flex flex-col items-center justify-center h-64 text-center p-4">
+              <div className="text-xl mb-4">Sign in to see updates from your favorite channels</div>
+              <Link to="/auth" className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 font-medium">
+                Sign In
+              </Link>
+            </div>
+          )}
+
           {/* Videos Grid */}
-          {!loading && (
+          {!loading && (isSubscriptions ? currentUser : true) && (
             <div
               id="content"
               className={`w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4`}
@@ -100,18 +126,29 @@ function Home() {
               ) : (
                 <div className="col-span-full text-center py-8">
                   <div className="max-w-md mx-auto">
-                    <h2 className="text-2xl font-bold mb-2">
-                      Welcome to Streamin!
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      No videos yet. Be the first to upload!
-                    </p>
-                    <Link
-                      to="/upload"
-                      className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
-                    >
-                      Start Uploading
-                    </Link>
+                    {isSubscriptions ? (
+                      <>
+                        <h2 className="text-xl font-bold mb-2">No videos found</h2>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Subscribe to channels to see their latest videos here!
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-2xl font-bold mb-2">
+                          Welcome to Streamin!
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          No videos yet. Be the first to upload!
+                        </p>
+                        <Link
+                          to="/upload"
+                          className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
+                        >
+                          Start Uploading
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

@@ -93,9 +93,9 @@ class ApiService {
   }
 
   // Video methods
-  async getVideos(page: number = 1, limit: number = 12, userId?: number): Promise<ApiResponse> {
+  async getVideos(page: number = 1, limit: number = 12, userId?: number, mode: 'all' | 'subscribed' = 'all'): Promise<ApiResponse> {
     try {
-      let url = `${API_BASE_URL}?action=videos&page=${page}&limit=${limit}`;
+      let url = `${API_BASE_URL}?action=videos&page=${page}&limit=${limit}&mode=${mode}`;
       if (userId) {
         url += `&user_id=${userId}`;
       }

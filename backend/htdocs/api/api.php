@@ -79,8 +79,9 @@ if ($action === 'videos' && $method === 'GET') {
         $limit = min(100, intval($_GET['limit'] ?? 10));
         $offset = ($page - 1) * $limit;
         $userIdFilter = intval($_GET['user_id'] ?? 0);
+        $mode = $_GET['mode'] ?? 'all';
 
-        // check for optional auth to show private videos
+        // check for optional auth to show private videos or subscribed videos
         $currentUserId = 0;
         $token = get_bearer_token();
         if ($token) {
@@ -97,17 +98,31 @@ if ($action === 'videos' && $method === 'GET') {
         $where = [];
         $bindParams = [];
 
-        // Visibility logic:
-        if ($userIdFilter > 0 && $userIdFilter === $currentUserId) {
-             // Viewing own channel: no visibility restriction
+        if ($mode === 'subscribed') {
+            if ($currentUserId <= 0) {
+                // Not logged in, return empty
+                json_response(['page'=>$page,'limit'=>$limit,'videos'=>[]]);
+            }
+            $sql .= " JOIN Subscriptions s ON s.channel_id = v.user_id";
+            $where[] = "s.subscriber_id = ?";
+            $bindParams[] = [$currentUserId, PDO::PARAM_INT];
+            $where[] = "s.status = 'active'";
+            $where[] = "v.visibility = 'public'";
         } else {
-             // Viewing home or other channel: public only
-             $where[] = "v.visibility = 'public'";
-        }
-
-        if ($userIdFilter > 0) {
-            $where[] = "v.user_id = ?";
-            $bindParams[] = [$userIdFilter, PDO::PARAM_INT];
+            // Standard list (Home or Channel)
+            
+            // Visibility logic:
+            if ($userIdFilter > 0 && $userIdFilter === $currentUserId) {
+                 // Viewing own channel: no visibility restriction
+            } else {
+                 // Viewing home or other channel: public only
+                 $where[] = "v.visibility = 'public'";
+            }
+    
+            if ($userIdFilter > 0) {
+                $where[] = "v.user_id = ?";
+                $bindParams[] = [$userIdFilter, PDO::PARAM_INT];
+            }
         }
 
         if (!empty($where)) {
