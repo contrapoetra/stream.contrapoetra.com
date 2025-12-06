@@ -10,6 +10,11 @@ const DarkModeProvider = ({ children }: {children: React.ReactNode}) => {
 
   useEffect(() => {
     localStorage.setItem('darkMode', String(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [darkMode]);
 
   const switchDarkMode = () => {

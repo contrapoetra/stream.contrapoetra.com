@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { formatTimeAgo } from "../lib/utils";
 
 interface VideoThumbnailProps {
   className?: string;
@@ -7,9 +8,10 @@ interface VideoThumbnailProps {
   channel: string;
   views?: number;
   thumbnailPath?: string;
+  createdAt: string;
 }
 
-function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: VideoThumbnailProps) {
+function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, createdAt }: VideoThumbnailProps) {
   const formatViews = (viewCount: number) => {
     if (viewCount >= 1000000) {
       return `${(viewCount / 1000000).toFixed(1)}M views`;
@@ -23,7 +25,7 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
     if (thumbnailPath) {
       // Construct URL from API base, stripping /api/api.php to get web root
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php';
-      const baseUrl = apiUrl.replace(/\/api\/api\.php$/, '').replace(/\/api\.php$/, '');
+      const baseUrl = apiUrl.replace( /\/api\/api\.php$/, '').replace( /\/api\.php$/, '');
       return `${baseUrl}/${thumbnailPath}`;
     }
     // Fallback to placeholder
@@ -58,13 +60,13 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
 
             {/* Title and Meta */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">
+              <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1 text-foreground">
                 {title}
               </h3>
-              <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                <p className="hover:text-neutral-900 dark:hover:text-neutral-200">{channel}</p>
+              <div className="text-xs text-muted-foreground">
+                <p className="hover:text-primary transition-colors">{channel}</p>
                 {views !== undefined && (
-                  <p>{formatViews(views)} • Just now</p>
+                  <p>{formatViews(views)} • {formatTimeAgo(createdAt)}</p>
                 )}
               </div>
             </div>

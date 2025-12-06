@@ -92,6 +92,7 @@ function Home() {
                     channel={video.username}
                     views={video.views}
                     thumbnailPath={video.thumbnail_path}
+                    createdAt={video.created_at}
                   />
                 ))
               ) : (

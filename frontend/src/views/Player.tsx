@@ -3,8 +3,9 @@ import VideoThumbnail from '../components/VideoThumbnail';
 import UserComment from '../components/UserComment';
 import { useSearchParams } from 'react-router-dom';
 import { DarkModeContext } from '../context/DarkModeContext';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react'; // Corrected line
 import apiService from '../services/api';
+import { formatTimeAgo } from '../lib/utils';
 
 function Player() {
   const { darkMode } = useContext(DarkModeContext);
@@ -82,7 +83,7 @@ function Player() {
   };
 
   return (
-    <div id="player" className={`flex w-full min-h-screen gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
+    <div id="player" className={`flex w-full min-h-screen mt-12 gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
       <div id="content" className="flex flex-col w-3/4 pl-12">
         <div id="video" className="flex shrink-0 mt-5 mb-5 rounded-xl overflow-hidden">
           <VideoPlayer
@@ -95,8 +96,8 @@ function Player() {
           <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
           <div className="flex items-center gap-4 mt-3">
             <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
-            <span className={`text-sm ${darkMode ? 'text-neutral-400' : 'text-neutral-600'}`}>
-              {video.views?.toLocaleString() || 0} views • Just now
+            <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-neutral-600'}`}>
+              {video.views?.toLocaleString() || 0} views • {formatTimeAgo(video.created_at)}
             </span>
           </div>
 
@@ -126,6 +127,7 @@ function Player() {
               channel={relatedVideo.username}
               views={relatedVideo.views}
               thumbnailPath={relatedVideo.thumbnail_path}
+              createdAt={relatedVideo.created_at}
             />
           ))}
         </div>
