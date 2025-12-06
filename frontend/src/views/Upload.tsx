@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useMemo } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 
 function Upload() {
@@ -21,23 +21,35 @@ function Upload() {
 
   // Generate placeholders for the background sliding animation
   // We need enough items to cover the screen width plus scroll overlap
-  const placeholders = Array.from({ length: 20 }); 
+  const placeholders = Array.from({ length: 20 });
+  
+  // Generate random speeds for each row (20s to 50s) and random start positions
+  const rowConfigs = useMemo(() => {
+    return Array.from({ length: 8 }).map(() => ({
+      duration: `${Math.floor(Math.random() * 30) + 20}s`,
+      delay: `${Math.floor(Math.random() * -50)}s`
+    }));
+  }, []);
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${darkMode ? 'bg-neutral-900' : 'bg-neutral-100'}`}>
       
       {/* Background Animation Layer */}
-      <div className="absolute inset-0 flex flex-col justify-evenly opacity-10 pointer-events-none select-none z-0">
-        {[0, 1, 2, 3].map((rowIndex) => (
+      <div className="absolute inset-0 flex flex-col justify-center gap-6 opacity-10 pointer-events-none select-none z-0 overflow-hidden">
+        {rowConfigs.map((config, rowIndex) => (
           <div 
             key={rowIndex} 
-            className={`flex gap-4 w-max ${rowIndex % 2 === 0 ? 'animate-slide-left' : 'animate-slide-right'}`}
+            className="flex gap-4 w-max animate-slide-right"
+            style={{ 
+              animationDuration: config.duration,
+              animationDelay: config.delay
+            }}
           >
             {/* Double the array to ensure seamless loop */}
             {[...placeholders, ...placeholders].map((_, i) => (
               <div 
                 key={i} 
-                className="w-64 h-36 bg-yellow-500 rounded-lg flex-shrink-0"
+                className="w-80 h-44 bg-yellow-500 rounded-lg flex-shrink-0"
               />
             ))}
           </div>
@@ -61,7 +73,7 @@ function Upload() {
                   type="file" 
                   accept="video/*" 
                   onChange={handleFileChange}
-                  className="w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                  className={`w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold ${darkMode ? 'file:bg-white file:text-black hover:file:bg-neutral-200' : 'file:bg-black file:text-white hover:file:bg-neutral-800'}`}
                 />
               </div>
               {file && <p className={`mt-2 text-sm ${darkMode ? 'text-green-400' : 'text-green-600'}`}>Selected: {file.name}</p>}
@@ -78,7 +90,7 @@ function Upload() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter video title"
-                className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400' : 'bg-white border-neutral-300 text-black placeholder-neutral-400'}`}
+                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'}`}
                 required
               />
             </div>
@@ -94,7 +106,7 @@ function Upload() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Tell viewers about your video"
                 rows={4}
-                className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400' : 'bg-white border-neutral-300 text-black placeholder-neutral-400'}`}
+                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all resize-none ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'}`}
               />
             </div>
 
@@ -102,7 +114,7 @@ function Upload() {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 ${darkMode ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-neutral-800'}`}
               >
                 Upload Video
               </button>

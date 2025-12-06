@@ -5,6 +5,7 @@ import { useContext, useState, useRef, useEffect } from 'react';
 import Home from './views/Home';
 import Player from './views/Player';
 import Auth from './views/Auth';
+import Upload from './views/Upload';
 import './App.css';
 import { User } from 'lucide-react';
 // import { Toggle } from "@/components/ui/toggle"
@@ -64,11 +65,18 @@ function AppContent() {
                 {isProfileOpen && (
                   <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 ${darkMode ? 'bg-neutral-800 text-white' : 'bg-white text-black'}`}>
                     {user && (
-                      <div className={`px-4 py-2 text-sm border-b ${darkMode ? 'border-neutral-700' : 'border-neutral-100'}`}>
+                      <div className={`px-4 py-2 text-sm border-b ${darkMode ? 'border-neutral-700' : 'border-gray-100'}`}>
                         <p className="font-medium truncate">{user.username}</p>
                         <p className={`text-xs truncate ${darkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>{user.email}</p>
                       </div>
                     )}
+                    <Link
+                      to="/upload"
+                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-opacity-10 ${darkMode ? 'hover:bg-white' : 'hover:bg-black'}`}
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      Upload Video
+                    </Link>
                     <button
                       onClick={() => {
                         setIsProfileOpen(false);
@@ -94,6 +102,8 @@ function AppContent() {
             </div>
           } />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/subscriptions" element={<Home />} />
+          <Route path="/upload" element={<Upload />} />
         </Routes>
       </div>
     </Router>

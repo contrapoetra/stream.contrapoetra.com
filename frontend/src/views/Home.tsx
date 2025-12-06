@@ -100,15 +100,15 @@ function Home() {
                     <h2 className="text-2xl font-bold mb-2">
                       Welcome to Streamin!
                     </h2>
-                    <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
                       No videos yet. Be the first to upload!
                     </p>
-                    <a
-                      href="/auth"
-                      className="inline-block bg-neutral-600 text-white px-6 py-2 rounded-lg hover:bg-neutral-700 transition"
+                    <Link
+                      to="/upload"
+                      className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
                     >
                       Start Uploading
-                    </a>
+                    </Link>
                   </div>
                 </div>
               )}
