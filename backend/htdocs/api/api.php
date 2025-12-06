@@ -92,22 +92,36 @@ if ($action === 'videos' && $method === 'GET') {
 
         $sql = "SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.duration, v.visibility, v.created_at
                 FROM Videos v
-                JOIN Users u ON u.user_id = v.user_id
-                WHERE (v.visibility = 'public' OR v.user_id = :current_user_id)";
+                JOIN Users u ON u.user_id = v.user_id";
         
+        $where = [];
+        $bindParams = [];
+
+        // Visibility logic:
+        if ($userIdFilter > 0 && $userIdFilter === $currentUserId) {
+             // Viewing own channel: no visibility restriction
+        } else {
+             // Viewing home or other channel: public only
+             $where[] = "v.visibility = 'public'";
+        }
+
         if ($userIdFilter > 0) {
-            $sql .= " AND v.user_id = :uid";
+            $where[] = "v.user_id = ?";
+            $bindParams[] = [$userIdFilter, PDO::PARAM_INT];
+        }
+
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(" AND ", $where);
         }
         
-        $sql .= " ORDER BY v.created_at DESC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY v.created_at DESC LIMIT ? OFFSET ?";
+        $bindParams[] = [$limit, PDO::PARAM_INT];
+        $bindParams[] = [$offset, PDO::PARAM_INT];
 
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':current_user_id', $currentUserId, PDO::PARAM_INT);
-        if ($userIdFilter > 0) {
-            $stmt->bindValue(':uid', $userIdFilter, PDO::PARAM_INT);
+        foreach ($bindParams as $i => $param) {
+            $stmt->bindValue($i + 1, $param[0], $param[1]);
         }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $videos = $stmt->fetchAll();
 

@@ -2,7 +2,7 @@ import { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
-import { Upload as UploadIcon, Image as ImageIcon, Film, Globe, Lock } from 'lucide-react';
+import { Upload as UploadIcon, Image as ImageIcon, Film, Globe, Lock, X } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 function Upload() {
@@ -73,6 +73,17 @@ function Upload() {
       if (thumbnailPreviewUrl && thumbnailFile) URL.revokeObjectURL(thumbnailPreviewUrl);
     };
   }, [videoPreviewUrl, thumbnailPreviewUrl, thumbnailFile]);
+
+  const resetUpload = () => {
+    setFile(null);
+    setVideoPreviewUrl(null);
+    setThumbnailFile(null);
+    setThumbnailPreviewUrl(null);
+    setAutoThumbnailBlob(null);
+    setTitle('');
+    setDescription('');
+    setDuration(0);
+  };
 
   const processVideoFile = (selectedFile: File) => {
     setFile(selectedFile);
@@ -257,14 +268,24 @@ function Upload() {
               onDrop={handleDrop}
             >
               {videoPreviewUrl ? (
-                <video
-                  ref={videoRef}
-                  src={videoPreviewUrl}
-                  className="w-full h-full object-contain bg-black"
-                  controls
-                  onLoadedMetadata={onVideoLoadedMetadata}
-                  onSeeked={onVideoSeeked}
-                />
+                <div className="relative w-full h-full group">
+                  <video
+                    ref={videoRef}
+                    src={videoPreviewUrl}
+                    className="w-full h-full object-contain bg-black"
+                    controls
+                    onLoadedMetadata={onVideoLoadedMetadata}
+                    onSeeked={onVideoSeeked}
+                  />
+                  <button 
+                    type="button"
+                    onClick={resetUpload}
+                    className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 z-50"
+                    title="Remove video"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               ) : (
                 <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center p-6">
                   <div className={`p-4 rounded-full mb-4 ${darkMode ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
