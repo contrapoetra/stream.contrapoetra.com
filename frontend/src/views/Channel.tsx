@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useAuth } from '../context/AuthContext';
 import { Settings, Share2, Film } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import apiService from '../services/api';
 import type { Video } from '../services/api';
 import VideoThumbnail from '../components/VideoThumbnail';
@@ -33,11 +33,11 @@ function Channel() {
         setLoading(true);
         // Fetch channel info
         const channelResponse = await apiService.getChannel(username);
-        
+
         if (channelResponse.user) {
           setChannel(channelResponse.user);
           setIsSubscribed(channelResponse.user.is_subscribed || false);
-          
+
           // Fetch channel videos using user_id
           const videosResponse = await apiService.getVideos(1, 20, channelResponse.user.user_id); // Assuming getVideos now accepts userId
           if (videosResponse.videos) {
@@ -101,7 +101,7 @@ function Channel() {
   return (
     <div className={`min-h-screen w-full ${darkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-black'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
 
 
         {/* Channel Header */}
@@ -111,7 +111,7 @@ function Channel() {
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-neutral-800 shadow-lg flex-shrink-0 bg-neutral-300 flex items-center justify-center text-3xl font-bold text-white select-none">
                {channel.username.charAt(0).toUpperCase()}
             </div>
-            
+
             {/* Channel Info */}
             <div>
               <h1 className="text-3xl font-bold">{channel.username}</h1>
@@ -124,17 +124,17 @@ function Channel() {
           {/* Channel Actions */}
           <div className="flex items-center gap-3 mt-4 sm:mt-0">
             {isOwner && (
-              <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${darkMode ? 'bg-neutral-800 hover:bg-neutral-700 text-white' : 'bg-neutral-200 hover:bg-neutral-300 text-black'}`}>
+              <Link to="/manage" className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${darkMode ? 'bg-neutral-800 hover:bg-neutral-700 text-white' : 'bg-neutral-200 hover:bg-neutral-300 text-black'}`}>
                 <Settings size={18} />
                 Manage Channel
-              </button>
+              </Link>
             )}
             <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${darkMode ? 'bg-neutral-800 hover:bg-neutral-700 text-white' : 'bg-neutral-200 hover:bg-neutral-300 text-black'}`}>
               <Share2 size={18} />
               Share
             </button>
             {!isOwner && (
-              <button 
+              <button
                 onClick={handleSubscribe}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${isSubscribed ? (darkMode ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-neutral-200 text-black hover:bg-neutral-300') : 'bg-red-600 hover:bg-red-700 text-white'}`}
               >

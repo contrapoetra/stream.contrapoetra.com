@@ -9,6 +9,7 @@ import Upload from './views/Upload';
 import Channel from './views/Channel';
 import './App.css';
 import { User } from 'lucide-react';
+import Manage from './views/Manage';
 // import { Toggle } from "@/components/ui/toggle"
 
 function AppContent() {
@@ -114,6 +115,7 @@ function AppContent() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/subscriptions" element={<Home />} />
           <Route path="/upload" element={<Upload />} />
+          <Route path="/manage" element={<Manage />} />
           {/* Catch-all for channel pages or 404s */}
           <Route path="/:handle" element={<Channel />} />
         </Routes>
