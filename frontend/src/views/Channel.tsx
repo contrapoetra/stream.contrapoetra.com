@@ -19,6 +19,7 @@ function Channel() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     const fetchChannelData = async () => {
@@ -35,6 +36,7 @@ function Channel() {
         
         if (channelResponse.user) {
           setChannel(channelResponse.user);
+          setIsSubscribed(channelResponse.user.is_subscribed || false);
           
           // Fetch channel videos using user_id
           const videosResponse = await apiService.getVideos(1, 20, channelResponse.user.user_id); // Assuming getVideos now accepts userId
@@ -54,6 +56,28 @@ function Channel() {
 
     fetchChannelData();
   }, [username]);
+
+  const handleSubscribe = async () => {
+    if (!currentUser) {
+      // Redirect to login or show toast
+      return;
+    }
+    if (!channel) return;
+
+    try {
+      if (isSubscribed) {
+        await apiService.unsubscribe(channel.user_id);
+        setIsSubscribed(false);
+        setChannel((prev: any) => ({ ...prev, subscriber_count: Math.max(0, prev.subscriber_count - 1) }));
+      } else {
+        await apiService.subscribe(channel.user_id);
+        setIsSubscribed(true);
+        setChannel((prev: any) => ({ ...prev, subscriber_count: prev.subscriber_count + 1 }));
+      }
+    } catch (error) {
+      console.error('Subscription failed', error);
+    }
+  };
 
   const isOwner = currentUser && channel && currentUser.id === channel.user_id;
 
@@ -116,8 +140,11 @@ function Channel() {
               Share
             </button>
             {!isOwner && (
-              <button className="px-4 py-2 rounded-lg text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition-colors">
-                Subscribe
+              <button 
+                onClick={handleSubscribe}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${isSubscribed ? (darkMode ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-neutral-200 text-black hover:bg-neutral-300') : 'bg-red-600 hover:bg-red-700 text-white'}`}
+              >
+                {isSubscribed ? 'Subscribed' : 'Subscribe'}
               </button>
             )}
           </div>

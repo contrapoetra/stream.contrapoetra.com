@@ -151,6 +151,21 @@ if ($action === 'channel' && $method === 'GET') {
 
         $user['subscriber_count'] = $subCount;
 
+        // Check subscription status
+        $isSubscribed = false;
+        $token = get_bearer_token();
+        if ($token) {
+            $decoded = decode_jwt($token);
+            if ($decoded && isset($decoded->sub)) {
+                $tokenUser = intval($decoded->sub);
+                $stmtCheck = $pdo->prepare("SELECT status FROM Subscriptions WHERE subscriber_id = ? AND channel_id = ?");
+                $stmtCheck->execute([$tokenUser, $user['user_id']]);
+                $sub = $stmtCheck->fetch();
+                if ($sub && $sub['status'] === 'active') $isSubscribed = true;
+            }
+        }
+        $user['is_subscribed'] = $isSubscribed;
+
         json_response(['user' => $user]);
     } catch (Exception $e) {
         json_response(['error' => $e->getMessage()], 500);
@@ -184,6 +199,16 @@ if ($action === 'video' && $method === 'GET') {
         $upd = $pdo->prepare("UPDATE Videos SET views = views + 1 WHERE video_id = ?");
         $upd->execute([$id]);
     } catch (Exception $e) { /* ignore */ }
+
+    // Check subscription to video owner
+    $isSubscribed = false;
+    if ($tokenUser) {
+        $stmtCheck = $pdo->prepare("SELECT status FROM Subscriptions WHERE subscriber_id = ? AND channel_id = ?");
+        $stmtCheck->execute([$tokenUser, $v['user_id']]);
+        $sub = $stmtCheck->fetch();
+        if ($sub && $sub['status'] === 'active') $isSubscribed = true;
+    }
+    $v['is_subscribed'] = $isSubscribed;
 
     json_response(['video'=>$v]);
 }
