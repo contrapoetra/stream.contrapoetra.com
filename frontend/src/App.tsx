@@ -7,7 +7,7 @@ import Player from './views/Player';
 import Auth from './views/Auth';
 import Streamin from './assets/_streamin.svg';
 import './App.css';
-import { Toggle } from "@/components/ui/toggle"
+// import { Toggle } from "@/components/ui/toggle"
 
 function AppContent() {
   const {darkMode, switchDarkMode} = useContext(DarkModeContext);
@@ -23,7 +23,9 @@ function AppContent() {
             </Link>
           </div>
           <div className="absolute right-30">
-              <Toggle onClick={switchDarkMode} className='m-0 p-3'>{darkMode ? 'Light' : 'Dark'}</Toggle>
+              <button onClick={switchDarkMode} className={`m-0 p-3 rounded ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'} hover:opacity-80`}>
+                {darkMode ? 'Light' : 'Dark'}
+              </button>
             </div>
           <div className="absolute right-4 m-0.75">
             {isAuthenticated ? (

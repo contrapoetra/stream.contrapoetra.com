@@ -1,39 +1,108 @@
-import VideoThumbnail from '../components/VideoThumbnail';
-import { DarkModeContext } from '../context/DarkModeContext';
-import { useContext } from 'react';
+import VideoThumbnail from "../components/VideoThumbnail";
+import { DarkModeContext } from "../context/DarkModeContext";
+import { useContext, useEffect, useState } from "react";
+import apiService from "../services/api";
 
 function Home() {
   const { darkMode } = useContext(DarkModeContext);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getVideos(1, 16);
+
+        if (response.videos) {
+          setVideos(response.videos);
+          setError(null); // Clear error on success
+        } else {
+          setError("No videos available");
+        }
+      } catch (err) {
+        console.error("Error fetching videos:", err);
+        setError("Failed to connect to server");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   return (
     <>
-      <div className={`${darkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-100 text-black'} flex w-full h-full`}>
-        <div id="sidebar" className={`${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} w-1/5 h-full text-2xl`}>
+      <div
+        className={`${darkMode ? "text-white" : "text-black"} flex w-full min-h-screen`}
+      >
+        <div
+          id="sidebar"
+          className={`${darkMode ? "bg-neutral-950" : "bg-neutral-50"} w-1/5 min-h-screen text-2xl sticky top-0`}
+        >
           sidebar
         </div>
         <div className="flex flex-col w-full">
-          <div id="content" className={`w-full grid grid-cols-3 gap-0`}>
-            <VideoThumbnail title="Steadfast (Dimas Atha Putra, 2024)" channel="contrapoetra" />
-            <VideoThumbnail title="How I Accidentally Broke the Internet" channel="TechGoblin" />
-            <VideoThumbnail title="10-Min Speedrun of Absolute Nonsense" channel="ChaosCentral" />
-            <VideoThumbnail title="Why My Cat Hates Gravity" channel="FelixFiles" />
-            <VideoThumbnail title="Making a Sandwich Blindfolded (Disaster)" channel="SnackAttackTV" />
-            <VideoThumbnail title="I Tried Learning Piano in 24 Hours" channel="NoteNerd" />
-            <VideoThumbnail title="The Deep Lore Behind My Toaster" channel="ApplianceLore" />
-            <VideoThumbnail title="Ranking Every Cereal From Painful to Legendary" channel="BreakfastBros" />
-            <VideoThumbnail title="Reacting to My Old Cringe Posts" channel="VintageEmbarrassment" />
-            <VideoThumbnail title="I Turned My Room Into a Jungle" channel="LeafLord" />
-            <VideoThumbnail title="You Won’t Believe What’s Under My Bed" channel="MysteryMuncher" />
-            <VideoThumbnail title="Trying Viral TikTok Hacks So You Don’t Have To" channel="HackOrWack" />
-            <VideoThumbnail title="I Built a PC Out of Pure Spite" channel="SaltyEngineer" />
-            <VideoThumbnail title="The Day My Dog Learned Betrayal" channel="PawDrama" />
-            <VideoThumbnail title="Is Water Wet? A Scientific Meltdown" channel="BrainCellMinusOne" />
-            <VideoThumbnail title="This Game Made Me Question Reality" channel="PixelPanic" />
-          </div>
+          {/* Error Message */}
+          {error && (
+            <div
+              className={`${darkMode ? "bg-neutral-900" : "bg-white"} p-4 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
+            >
+              <div className="p-2 bg-red-500 text-white rounded">
+                {error} - Make sure backend server is running!
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-xl">Loading videos...</div>
+            </div>
+          )}
+
+          {/* Videos Grid */}
+          {!loading && (
+            <div
+              id="content"
+              className={`w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4`}
+            >
+              {videos.length > 0 ? (
+                videos.map((video) => (
+                  <VideoThumbnail
+                    key={video.video_id}
+                    videoId={video.video_id}
+                    title={video.title}
+                    channel={video.username}
+                    views={video.views}
+                    thumbnailPath={video.thumbnail_path}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <div className="max-w-md mx-auto">
+                    <h2 className="text-2xl font-bold mb-2">
+                      Welcome to Streamin!
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      No videos yet. Be the first to upload!
+                    </p>
+                    <a
+                      href="/auth"
+                      className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
+                    >
+                      Start Uploading
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>
-  )
+  );
 }
 
 export default Home;

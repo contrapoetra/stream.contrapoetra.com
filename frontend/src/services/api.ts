@@ -1,7 +1,20 @@
-const API_BASE_URL = 'http://localhost/www/api/api.php';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php';
+
+export interface Video {
+  video_id: number;
+  user_id: number;
+  username: string;
+  title: string;
+  description: string;
+  file_path: string;
+  thumbnail_path?: string;
+  views: number;
+  visibility: 'public' | 'private';
+  created_at: string;
+}
 
 export interface ApiResponse<T = any> {
-  success: boolean;
+  success?: boolean;
   message?: string;
   data?: T;
   user?: {
@@ -10,6 +23,10 @@ export interface ApiResponse<T = any> {
     email: string;
   };
   token?: string;
+  videos?: Video[];
+  video?: Video;
+  page?: number;
+  limit?: number;
 }
 
 class ApiService {
@@ -63,6 +80,43 @@ class ApiService {
     }
   }
 
+  // Video methods
+  async getVideos(page: number = 1, limit: number = 12): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=videos&page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Get videos failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch videos',
+      };
+    }
+  }
+
+  async getVideo(videoId: number): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=video&id=${videoId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Get video failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch video',
+      };
+    }
+  }
+
   // Authentication methods
   async login(email: string, password: string): Promise<ApiResponse> {
     return this.post('login', { email, password });
@@ -96,16 +150,16 @@ class ApiService {
     }
   }
 
-  async addComment(videoId: number, comment: string): Promise<ApiResponse> {
-    return this.post('add_comment', { video_id: videoId, comment });
+  async addComment(videoId: number, commentText: string): Promise<ApiResponse> {
+    return this.post('comment', { video_id: videoId, comment_text: commentText });
   }
 
   async likeVideo(videoId: number): Promise<ApiResponse> {
-    return this.post('like_video', { video_id: videoId });
+    return this.post('like', { video_id: videoId, like_type: 'like' });
   }
 
   async dislikeVideo(videoId: number): Promise<ApiResponse> {
-    return this.post('dislike_video', { video_id: videoId });
+    return this.post('like', { video_id: videoId, like_type: 'dislike' });
   }
 
   async subscribe(channelId: number): Promise<ApiResponse> {
