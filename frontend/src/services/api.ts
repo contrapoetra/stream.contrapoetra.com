@@ -9,6 +9,7 @@ export interface Video {
   file_path: string;
   thumbnail_path?: string;
   views: number;
+  duration?: number;
   visibility: 'public' | 'private';
   created_at: string;
 }

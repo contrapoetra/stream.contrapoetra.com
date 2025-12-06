@@ -128,6 +128,7 @@ function Player() {
               views={relatedVideo.views}
               thumbnailPath={relatedVideo.thumbnail_path}
               createdAt={relatedVideo.created_at}
+              duration={relatedVideo.duration}
             />
           ))}
         </div>

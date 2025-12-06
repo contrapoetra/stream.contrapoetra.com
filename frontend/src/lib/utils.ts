@@ -6,7 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
+  // Assume backend sends UTC time without 'Z'. Append 'Z' to force UTC interpretation.
+  // If dateString already has 'Z' or offset, this might be invalid, but standard SQL returns "YYYY-MM-DD HH:MM:SS"
+  const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
   const now = new Date();
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
@@ -23,4 +25,16 @@ export function formatTimeAgo(dateString: string): string {
   if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
   const years = Math.floor(days / 365);
   return `${years} year${years > 1 ? 's' : ''} ago`;
+}
+
+export function formatDuration(seconds: number): string {
+  if (!seconds) return "00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }

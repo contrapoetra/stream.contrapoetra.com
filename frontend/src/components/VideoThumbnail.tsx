@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { formatTimeAgo } from "../lib/utils";
+import { formatTimeAgo, formatDuration } from "../lib/utils";
 
 interface VideoThumbnailProps {
   className?: string;
@@ -9,9 +9,10 @@ interface VideoThumbnailProps {
   views?: number;
   thumbnailPath?: string;
   createdAt: string;
+  duration?: number;
 }
 
-function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, createdAt }: VideoThumbnailProps) {
+function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, createdAt, duration }: VideoThumbnailProps) {
   const formatViews = (viewCount: number) => {
     if (viewCount >= 1000000) {
       return `${(viewCount / 1000000).toFixed(1)}M views`;
@@ -47,9 +48,9 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, created
                 (e.target as HTMLImageElement).src = `https://picsum.photos/320/180?random=${videoId}`;
               }}
             />
-            {/* Duration overlay (placeholder) */}
+            {/* Duration overlay */}
             <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 text-white text-xs px-1 rounded">
-              10:24
+              {formatDuration(duration || 0)}
             </div>
           </div>
 

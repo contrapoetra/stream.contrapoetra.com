@@ -74,7 +74,7 @@ if ($action === 'videos' && $method === 'GET') {
         $limit = min(100, intval($_GET['limit'] ?? 10));
         $offset = ($page - 1) * $limit;
 
-        $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.visibility, v.created_at
+        $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.duration, v.visibility, v.created_at
                                FROM Videos v
                                JOIN Users u ON u.user_id = v.user_id
                                WHERE v.visibility = 'public'
@@ -154,6 +154,7 @@ if ($action === 'upload' && ($method === 'POST')) {
         // sanitize title/description from POST fields
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? null);
+        $duration = intval($_POST['duration'] ?? 0);
         $visibility = in_array($_POST['visibility'] ?? 'public', ['public','private']) ? $_POST['visibility'] : 'public';
         if (!$title) $title = substr($file['name'], 0, 150);
 
@@ -173,8 +174,34 @@ if ($action === 'upload' && ($method === 'POST')) {
 
         // store relative file path for serving
         $relativePath = 'uploads/videos/' . $subdir . '/' . $baseName;
-        $stmt = $pdo->prepare("INSERT INTO Videos (user_id, title, description, file_path, mime_type, size, visibility, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$user_id, $title, $description, $relativePath, $mime, $file['size'], $visibility, 'uploaded']);
+
+        // handle thumbnail upload
+        $thumbnailPath = null;
+        if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
+            $thumb = $_FILES['thumbnail'];
+            // Basic validation for thumbnail
+            $tInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tMime = finfo_file($tInfo, $thumb['tmp_name']);
+            finfo_close($tInfo);
+            
+            if (strpos($tMime, 'image/') === 0) {
+                $thumbSubdir = date('Y/m');
+                $thumbDir = rtrim($config['thumb_dir'], '/') . '/' . $thumbSubdir;
+                if (!is_dir($thumbDir) && !mkdir($thumbDir, 0755, true)) {
+                    // silently fail or log? just ignore thumb for now
+                } else {
+                    $tExt = pathinfo($thumb['name'], PATHINFO_EXTENSION);
+                    $tBaseName = bin2hex(random_bytes(8)) . '.' . ($tExt ?: 'jpg');
+                    $tTargetPath = $thumbDir . '/' . $tBaseName;
+                    if (move_uploaded_file($thumb['tmp_name'], $tTargetPath)) {
+                        $thumbnailPath = 'uploads/thumbnails/' . $thumbSubdir . '/' . $tBaseName;
+                    }
+                }
+            }
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO Videos (user_id, title, description, file_path, thumbnail_path, mime_type, size, duration, visibility, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $title, $description, $relativePath, $thumbnailPath, $mime, $file['size'], $duration, $visibility, 'uploaded']);
         $video_id = $pdo->lastInsertId();
 
         // OPTIONAL: kick background job to generate thumbnails / transcode

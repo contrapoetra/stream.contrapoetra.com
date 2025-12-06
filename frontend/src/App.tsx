@@ -72,7 +72,7 @@ function AppContent() {
                     )}
                     <Link
                       to="/upload"
-                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-opacity-10 ${darkMode ? 'hover:bg-white' : 'hover:bg-black'}`}
+                      className={`block w-full text-left px-4 py-2 text-sm transition-colors ${darkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
                       onClick={() => setIsProfileOpen(false)}
                     >
                       Upload Video
@@ -82,7 +82,7 @@ function AppContent() {
                         setIsProfileOpen(false);
                         logout();
                       }}
-                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-opacity-10 ${darkMode ? 'hover:bg-white' : 'hover:bg-black'}`}
+                      className={`block w-full text-left px-4 py-2 text-sm transition-colors ${darkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
                     >
                       Logout
                     </button>
