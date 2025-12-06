@@ -97,6 +97,7 @@ if ($action === 'videos' && $method === 'GET') {
         
         $where = [];
         $bindParams = [];
+        $where[] = "v.status != 'deleted'";
 
         if ($mode === 'subscribed') {
             if ($currentUserId <= 0) {
@@ -200,7 +201,7 @@ if ($action === 'video' && $method === 'GET') {
     }
 
     // fetch
-    $stmt = $pdo->prepare("SELECT v.*, u.username FROM Videos v JOIN Users u ON u.user_id = v.user_id WHERE v.video_id = ?");
+    $stmt = $pdo->prepare("SELECT v.*, u.username FROM Videos v JOIN Users u ON u.user_id = v.user_id WHERE v.video_id = ? AND v.status != 'deleted'");
     $stmt->execute([$id]);
     $v = $stmt->fetch();
     if (!$v) json_response(['error'=>'not found'],404);
@@ -355,24 +356,14 @@ if ($action === 'video' && $method === 'DELETE') {
     $id = intval($_GET['id'] ?? 0);
     if (!$id) json_response(['error'=>'id required'],400);
 
-    $stmt = $pdo->prepare("SELECT user_id, file_path, thumbnail_path FROM Videos WHERE video_id = ?");
+    $stmt = $pdo->prepare("SELECT user_id FROM Videos WHERE video_id = ?");
     $stmt->execute([$id]);
     $v = $stmt->fetch();
     if (!$v) json_response(['error'=>'not found'],404);
     if ($v['user_id'] != $user_id) json_response(['error'=>'forbidden'],403);
 
-    // delete DB row (file removal optional, but we attempt)
-    $pdo->prepare("DELETE FROM Videos WHERE video_id = ?")->execute([$id]);
-
-    // attempt to delete files (best-effort)
-    if (!empty($v['file_path'])) {
-        $fp = __DIR__ . '/' . $v['file_path'];
-        if (file_exists($fp)) @unlink($fp);
-    }
-    if (!empty($v['thumbnail_path'])) {
-        $tp = __DIR__ . '/' . $v['thumbnail_path'];
-        if (file_exists($tp)) @unlink($tp);
-    }
+    // Instead of deleting, set status to 'deleted'
+    $pdo->prepare("UPDATE Videos SET status = 'deleted' WHERE video_id = ?")->execute([$id]);
 
     json_response(['message'=>'deleted']);
 }

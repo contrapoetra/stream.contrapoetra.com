@@ -274,6 +274,30 @@ class ApiService {
     return this.put('video', videoId, videoData);
   }
 
+  async del<T = any>(action: string, id: number): Promise<ApiResponse<T>> {
+    try {
+      const headers = this.getAuthHeaders() as any;
+
+      const response = await fetch(`${API_BASE_URL}?action=${action}&id=${id}`, {
+        method: 'DELETE',
+        headers: headers,
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('API request failed:', error);
+      return {
+        success: false,
+        message: 'Network error occurred',
+      };
+    }
+  }
+
+  async deleteVideo(videoId: number): Promise<ApiResponse> {
+    return this.del('video', videoId);
+  }
+
   async addComment(videoId: number, commentText: string): Promise<ApiResponse> {
     // This uses post method so Content-Type: application/json is added
     return this.post('comment', { video_id: videoId, comment_text: commentText });
