@@ -177,6 +177,28 @@ class ApiService {
     return this.post('register', { username, email, password });
   }
 
+  async put<T = any>(action: string, id: number, data?: any): Promise<ApiResponse<T>> {
+    try {
+      const headers = this.getAuthHeaders() as any;
+      headers['Content-Type'] = 'application/json';
+
+      const response = await fetch(`${API_BASE_URL}?action=${action}&id=${id}`, {
+        method: 'PUT',
+        headers: headers,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('API request failed:', error);
+      return {
+        success: false,
+        message: 'Network error occurred',
+      };
+    }
+  }
+
   // Protected methods that require authentication
   async uploadVideo(videoData: FormData): Promise<ApiResponse> {
     const token = localStorage.getItem('auth_token');
@@ -246,6 +268,10 @@ class ApiService {
       
       xhr.send(videoData);
     });
+  }
+
+  async updateVideo(videoId: number, videoData: { title: string; description: string; visibility: 'public' | 'private' }): Promise<ApiResponse> {
+    return this.put('video', videoId, videoData);
   }
 
   async addComment(videoId: number, commentText: string): Promise<ApiResponse> {
