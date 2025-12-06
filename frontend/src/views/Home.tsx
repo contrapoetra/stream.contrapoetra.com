@@ -2,6 +2,8 @@ import VideoThumbnail from "../components/VideoThumbnail";
 import { DarkModeContext } from "../context/DarkModeContext";
 import { useContext, useEffect, useState } from "react";
 import apiService from "../services/api";
+import { Link } from 'react-router-dom';
+import { Home as HomeIcon, Rss } from 'lucide-react';
 
 function Home() {
   const { darkMode } = useContext(DarkModeContext);
@@ -39,9 +41,22 @@ function Home() {
       >
         <div
           id="sidebar"
-          className={`${darkMode ? "bg-neutral-950" : "bg-neutral-50"} w-1/5 min-h-screen text-2xl sticky top-0`}
+          className={`${darkMode ? "bg-neutral-950" : "bg-neutral-50"} w-1/5 min-h-screen p-4 flex-shrink-0 shadow-md`}
         >
-          sidebar
+          <ul className="space-y-2">
+            <li>
+              <Link to="/" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-neutral-700' : 'hover:bg-neutral-200'}`}>
+                <HomeIcon size={20} className="mr-2" />
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link to="/subscriptions" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-neutral-700' : 'hover:bg-neutral-200'}`}>
+                <Rss size={20} className="mr-2" />
+                Subscriptions
+              </Link>
+            </li>
+          </ul>
         </div>
         <div className="flex flex-col w-full">
           {/* Error Message */}
