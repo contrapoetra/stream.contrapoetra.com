@@ -1,5 +1,5 @@
-import { useState, useContext, ChangeEvent, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useContext, type ChangeEvent, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -63,8 +63,8 @@ function Auth() {
           setError('Registration failed. Email might already be in use.');
         }
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch (err: unknown) {
+      setError('Network error. Please try again. ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
