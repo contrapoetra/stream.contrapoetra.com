@@ -21,8 +21,10 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
 
   const getThumbnailUrl = () => {
     if (thumbnailPath) {
-      // If thumbnail path exists, construct URL from API
-      return `${import.meta.env.VITE_API_URL || 'http://localhost:80/api'}/${thumbnailPath}`;
+      // Construct URL from API base, stripping /api/api.php to get web root
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php';
+      const baseUrl = apiUrl.replace(/\/api\/api\.php$/, '').replace(/\/api\.php$/, '');
+      return `${baseUrl}/${thumbnailPath}`;
     }
     // Fallback to placeholder
     return `https://picsum.photos/320/180?random=${videoId}`;

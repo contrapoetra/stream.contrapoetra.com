@@ -13,8 +13,8 @@ return [
     'jwt_secret' => 'replace_with_a_long_random_string_here',
 
     // Upload settings
-    'upload_dir' => __DIR__ . '/uploads/videos',
-    'thumb_dir'  => __DIR__ . '/uploads/thumbnails',
+    'upload_dir' => __DIR__ . '/../uploads/videos',
+    'thumb_dir'  => __DIR__ . '/../uploads/thumbnails',
     'max_file_size_bytes' => 1024 * 1024 * 1024, // 1GB cap example (adjust)
     'allowed_mimes' => [
         'video/mp4',

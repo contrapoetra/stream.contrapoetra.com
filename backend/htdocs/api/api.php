@@ -1,5 +1,6 @@
 <?php
 // api.php
+ini_set('display_errors', 0);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/auth.php';
@@ -7,11 +8,6 @@ require_once __DIR__ . '/auth.php';
 $config = require __DIR__ . '/config.php';
 
 global $pdo;
-
-// CORS headers for frontend
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 // Handle OPTIONS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -73,22 +69,26 @@ if ($action === 'login' && $method === 'POST') {
 
 // public: list videos with basic pagination
 if ($action === 'videos' && $method === 'GET') {
-    $page = max(1, intval($_GET['page'] ?? 1));
-    $limit = min(100, intval($_GET['limit'] ?? 10));
-    $offset = ($page - 1) * $limit;
+    try {
+        $page = max(1, intval($_GET['page'] ?? 1));
+        $limit = min(100, intval($_GET['limit'] ?? 10));
+        $offset = ($page - 1) * $limit;
 
-    $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.visibility, v.created_at
-                           FROM Videos v
-                           JOIN Users u ON u.user_id = v.user_id
-                           WHERE v.visibility = 'public'
-                           ORDER BY v.created_at DESC
-                           LIMIT ? OFFSET ?");
-    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
-    $stmt->execute();
-    $videos = $stmt->fetchAll();
+        $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.visibility, v.created_at
+                               FROM Videos v
+                               JOIN Users u ON u.user_id = v.user_id
+                               WHERE v.visibility = 'public'
+                               ORDER BY v.created_at DESC
+                               LIMIT ? OFFSET ?");
+        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $videos = $stmt->fetchAll();
 
-    json_response(['page'=>$page,'limit'=>$limit,'videos'=>$videos]);
+        json_response(['page'=>$page,'limit'=>$limit,'videos'=>$videos]);
+    } catch (Exception $e) {
+        json_response(['error' => $e->getMessage()], 500);
+    }
 }
 
 // public: single video by id (if public or authorized)
@@ -123,62 +123,66 @@ if ($action === 'video' && $method === 'GET') {
 }
 
 // -------------------- Authenticated endpoints --------------------
-if ($action === 'upload_video' && ($method === 'POST')) {
-    $user_id = require_auth_user_id();
+if ($action === 'upload' && ($method === 'POST')) {
+    try {
+        $user_id = require_auth_user_id();
 
-    // we expect form-data with multipart file 'video'
-    if (!isset($_FILES['video'])) {
-        json_response(['error'=>'no video file supplied (multipart/form-data, field name "video")'],400);
+        // we expect form-data with multipart file 'video'
+        if (!isset($_FILES['video'])) {
+            json_response(['error'=>'no video file supplied (multipart/form-data, field name "video")'],400);
+        }
+
+        $file = $_FILES['video'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            json_response(['error'=>'upload error', 'code'=>$file['error']],400);
+        }
+
+        // validate size
+        if ($file['size'] > $config['max_file_size_bytes']) {
+            json_response(['error'=>'file too large'],413);
+        }
+
+        // validate mime
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mime, $config['allowed_mimes'])) {
+            json_response(['error'=>'unsupported mime type', 'mime'=>$mime],415);
+        }
+
+        // sanitize title/description from POST fields
+        $title = trim($_POST['title'] ?? '');
+        $description = trim($_POST['description'] ?? null);
+        $visibility = in_array($_POST['visibility'] ?? 'public', ['public','private']) ? $_POST['visibility'] : 'public';
+        if (!$title) $title = substr($file['name'], 0, 150);
+
+        // ensure upload directory exists
+        $subdir = date('Y/m');
+        $targetDir = rtrim($config['upload_dir'], '/') . '/' . $subdir;
+        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true)) {
+            json_response(['error'=>'cannot create upload dir'],500);
+        }
+
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $baseName = bin2hex(random_bytes(8)) . '.' . ($ext ?: 'mp4');
+        $targetPath = $targetDir . '/' . $baseName;
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            json_response(['error'=>'failed to move uploaded file'],500);
+        }
+
+        // store relative file path for serving
+        $relativePath = 'uploads/videos/' . $subdir . '/' . $baseName;
+        $stmt = $pdo->prepare("INSERT INTO Videos (user_id, title, description, file_path, mime_type, size, visibility, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $title, $description, $relativePath, $mime, $file['size'], $visibility, 'uploaded']);
+        $video_id = $pdo->lastInsertId();
+
+        // OPTIONAL: kick background job to generate thumbnails / transcode
+        // For now, we return success and let a background service update duration/thumbnail/status later.
+        json_response(['message'=>'uploaded','video_id'=>(int)$video_id,'file_path'=>$relativePath],201);
+    } catch (Exception $e) {
+        json_response(['error' => $e->getMessage()], 500);
     }
-
-    $file = $_FILES['video'];
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        json_response(['error'=>'upload error', 'code'=>$file['error']],400);
-    }
-
-    // validate size
-    if ($file['size'] > $config['max_file_size_bytes']) {
-        json_response(['error'=>'file too large'],413);
-    }
-
-    // validate mime
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-
-    if (!in_array($mime, $config['allowed_mimes'])) {
-        json_response(['error'=>'unsupported mime type', 'mime'=>$mime],415);
-    }
-
-    // sanitize title/description from POST fields
-    $title = trim($_POST['title'] ?? '');
-    $description = trim($_POST['description'] ?? null);
-    $visibility = in_array($_POST['visibility'] ?? 'public', ['public','private']) ? $_POST['visibility'] : 'public';
-    if (!$title) $title = substr($file['name'], 0, 150);
-
-    // ensure upload directory exists
-    $subdir = date('Y/m');
-    $targetDir = rtrim($config['upload_dir'], '/') . '/' . $subdir;
-    if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true)) {
-        json_response(['error'=>'cannot create upload dir'],500);
-    }
-
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $baseName = bin2hex(random_bytes(8)) . '.' . ($ext ?: 'mp4');
-    $targetPath = $targetDir . '/' . $baseName;
-    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-        json_response(['error'=>'failed to move uploaded file'],500);
-    }
-
-    // store relative file path for serving
-    $relativePath = 'uploads/videos/' . $subdir . '/' . $baseName;
-    $stmt = $pdo->prepare("INSERT INTO Videos (user_id, title, description, file_path, mime_type, size, visibility, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$user_id, $title, $description, $relativePath, $mime, $file['size'], $visibility, 'uploaded']);
-    $video_id = $pdo->lastInsertId();
-
-    // OPTIONAL: kick background job to generate thumbnails / transcode
-    // For now, we return success and let a background service update duration/thumbnail/status later.
-    json_response(['message'=>'uploaded','video_id'=>(int)$video_id,'file_path'=>$relativePath],201);
 }
 
 // edit video (owner only)

@@ -76,7 +76,8 @@ function Player() {
   }
 
   const getVideoUrl = () => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php';
+    const baseUrl = apiUrl.replace(/\/api\/api\.php$/, '').replace(/\/api\.php$/, '');
     return `${baseUrl}/${video.file_path}`;
   };
 

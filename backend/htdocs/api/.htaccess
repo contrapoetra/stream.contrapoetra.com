@@ -6,4 +6,4 @@ Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
 # Handle preflight requests
 RewriteEngine On
 RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^(.*)$ index.php [QSA,L]
+RewriteRule ^(.*)$ api.php [QSA,L]

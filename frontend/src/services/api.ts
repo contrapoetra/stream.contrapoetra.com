@@ -32,9 +32,7 @@ export interface ApiResponse<T = any> {
 class ApiService {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('auth_token');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    const headers: any = {};
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -45,9 +43,12 @@ class ApiService {
 
   async post<T = any>(action: string, data?: any): Promise<ApiResponse<T>> {
     try {
+      const headers = this.getAuthHeaders() as any;
+      headers['Content-Type'] = 'application/json';
+
       const response = await fetch(`${API_BASE_URL}?action=${action}`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        headers: headers,
         body: data ? JSON.stringify(data) : undefined,
       });
 
@@ -131,7 +132,7 @@ class ApiService {
     const token = localStorage.getItem('auth_token');
 
     try {
-      const response = await fetch(`${API_BASE_URL}?action=upload_video`, {
+      const response = await fetch(`${API_BASE_URL}?action=upload`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

@@ -1,11 +1,15 @@
 import { useContext, useState, useMemo } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
+import { useNavigate } from 'react-router-dom';
+import apiService from '../services/api';
 
 function Upload() {
   const { darkMode } = useContext(DarkModeContext);
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -13,10 +17,35 @@ function Upload() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Upload payload:', { title, description, file });
-    alert('Upload feature is a mockup. Check console for payload.');
+    if (!file) {
+      alert('Please select a video file');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('visibility', 'public'); // Default to public
+
+      const response = await apiService.uploadVideo(formData);
+
+      if (response.video_id || response.message === 'uploaded') {
+        alert('Video uploaded successfully!');
+        navigate('/'); // Redirect to home or the new video page
+      } else {
+        alert(`Upload failed: ${response.error || response.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('An error occurred during upload.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Generate placeholders for the background sliding animation
@@ -73,7 +102,8 @@ function Upload() {
                   type="file" 
                   accept="video/*" 
                   onChange={handleFileChange}
-                  className={`w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold ${darkMode ? 'file:bg-white file:text-black hover:file:bg-neutral-200' : 'file:bg-black file:text-white hover:file:bg-neutral-800'}`}
+                  disabled={isUploading}
+                  className={`w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold ${darkMode ? 'file:bg-white file:text-black hover:file:bg-neutral-200' : 'file:bg-black file:text-white hover:file:bg-neutral-800'} ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
               </div>
               {file && <p className={`mt-2 text-sm ${darkMode ? 'text-green-400' : 'text-green-600'}`}>Selected: {file.name}</p>}
@@ -90,7 +120,8 @@ function Upload() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter video title"
-                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'}`}
+                disabled={isUploading}
+                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'} ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 required
               />
             </div>
@@ -106,7 +137,8 @@ function Upload() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Tell viewers about your video"
                 rows={4}
-                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all resize-none ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'}`}
+                disabled={isUploading}
+                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all resize-none ${darkMode ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400 focus:ring-2 focus:ring-white' : 'bg-white border-neutral-300 text-black placeholder-neutral-400 focus:ring-2 focus:ring-black'} ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             </div>
 
@@ -114,9 +146,10 @@ function Upload() {
             <div className="pt-2">
               <button
                 type="submit"
-                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 ${darkMode ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-neutral-800'}`}
+                disabled={isUploading}
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 ${darkMode ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-neutral-800'} ${isUploading ? 'opacity-50 cursor-not-allowed hover:translate-y-0' : ''}`}
               >
-                Upload Video
+                {isUploading ? 'Uploading...' : 'Upload Video'}
               </button>
             </div>
 
