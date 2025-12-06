@@ -1,4 +1,4 @@
-import { useContext, useState, useRef, useEffect } from 'react';
+import { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -20,9 +20,21 @@ function Upload() {
   
   const [duration, setDuration] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Generate placeholders for the background sliding animation
+  const placeholders = Array.from({ length: 20 });
+  
+  // Generate random speeds for each row (20s to 50s) and random start positions
+  const rowConfigs = useMemo(() => {
+    return Array.from({ length: 8 }).map(() => ({
+      duration: `${Math.floor(Math.random() * 30) + 20}s`,
+      delay: `${Math.floor(Math.random() * -50)}s`
+    }));
+  }, []);
 
   // Cleanup object URLs
   useEffect(() => {
@@ -32,21 +44,47 @@ function Upload() {
     };
   }, [videoPreviewUrl, thumbnailPreviewUrl, thumbnailFile]);
 
+  const processVideoFile = (selectedFile: File) => {
+    setFile(selectedFile);
+    const url = URL.createObjectURL(selectedFile);
+    setVideoPreviewUrl(url);
+    
+    // Reset thumbnail
+    setThumbnailFile(null);
+    setThumbnailPreviewUrl(null);
+    setAutoThumbnailBlob(null);
+    
+    // Auto-set title from filename
+    if (!title) {
+      setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
+    }
+  };
+
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      const url = URL.createObjectURL(selectedFile);
-      setVideoPreviewUrl(url);
-      
-      // Reset thumbnail
-      setThumbnailFile(null);
-      setThumbnailPreviewUrl(null);
-      setAutoThumbnailBlob(null);
-      
-      // Auto-set title from filename
-      if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
+      processVideoFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type.startsWith('video/')) {
+        processVideoFile(droppedFile);
+      } else {
+        alert('Please upload a valid video file.');
       }
     }
   };
@@ -135,8 +173,31 @@ function Upload() {
   };
 
   return (
-    <div className={`min-h-screen w-full ${darkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-black'}`}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className={`relative min-h-screen w-full overflow-hidden ${darkMode ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-black'}`}>
+      
+      {/* Background Animation Layer */}
+      <div className="absolute inset-0 flex flex-col justify-center gap-6 opacity-10 pointer-events-none select-none z-0 overflow-hidden">
+        {rowConfigs.map((config, rowIndex) => (
+          <div 
+            key={rowIndex} 
+            className="flex gap-4 w-max animate-slide-right"
+            style={{ 
+              animationDuration: config.duration,
+              animationDelay: config.delay
+            }}
+          >
+            {/* Double the array to ensure seamless loop */}
+            {[...placeholders, ...placeholders].map((_, i) => (
+              <div 
+                key={i} 
+                className="w-80 h-44 bg-yellow-500 rounded-lg flex-shrink-0"
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">Upload Video</h1>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -145,7 +206,12 @@ function Upload() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Video Preview Area */}
-            <div className={`aspect-video rounded-xl overflow-hidden border-2 border-dashed flex flex-col items-center justify-center relative transition-colors ${darkMode ? 'bg-neutral-900 border-neutral-700 hover:border-neutral-500' : 'bg-white border-neutral-300 hover:border-neutral-400'}`}>
+            <div 
+              className={`aspect-video rounded-xl overflow-hidden border-2 border-dashed flex flex-col items-center justify-center relative transition-colors ${isDragging ? (darkMode ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500 bg-blue-50') : (darkMode ? 'bg-neutral-900/80 border-neutral-700 hover:border-neutral-500' : 'bg-white/80 border-neutral-300 hover:border-neutral-400')} backdrop-blur-sm`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               {videoPreviewUrl ? (
                 <video
                   ref={videoRef}
@@ -156,7 +222,7 @@ function Upload() {
                   onSeeked={onVideoSeeked}
                 />
               ) : (
-                <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center p-6 hover:bg-opacity-50">
+                <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center p-6">
                   <div className={`p-4 rounded-full mb-4 ${darkMode ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
                     <UploadIcon size={48} className={darkMode ? 'text-neutral-400' : 'text-neutral-500'} />
                   </div>
