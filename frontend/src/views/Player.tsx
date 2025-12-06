@@ -82,16 +82,16 @@ function Player() {
   };
 
   return (
-    <div id="player" className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
-      <div id="content" className="flex flex-col w-3/4 ml-12">
-        <div id="video" className="flex shrink-0 ml-12 mt-5 mb-5 rounded-xl overflow-hidden">
+    <div id="player" className={`flex w-full min-h-screen gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
+      <div id="content" className="flex flex-col w-3/4 pl-12">
+        <div id="video" className="flex shrink-0 mt-5 mb-5 rounded-xl overflow-hidden">
           <VideoPlayer
             src={getVideoUrl()}
             title={video.title}
           />
         </div>
 
-        <div className="ml-12">
+        <div>
           <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
           <div className="flex items-center gap-4 mt-3">
             <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
@@ -115,7 +115,7 @@ function Player() {
         </div>
       </div>
 
-      <div id="sidebar" className="w-1/4 min-h-screen mt-5 sticky top-0">
+      <div id="sidebar" className="w-1/4 min-h-screen mt-5 sticky top-0 pr-12">
         <h3 className={`text-lg font-semibold mb-4 ml-2 ${darkMode ? 'text-white' : 'text-black'}`}>Related Videos</h3>
         <div className="space-y-3">
           {relatedVideos.map((relatedVideo) => (

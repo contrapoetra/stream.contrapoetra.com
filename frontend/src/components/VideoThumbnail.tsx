@@ -31,7 +31,7 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
   };
 
   return (
-    <Link to={`/player?id=${videoId}`}>
+    <Link to={`/watch?id=${videoId}`}>
       <div className={`flex flex-col justify-end items-center mb-6 group cursor-pointer`}>
         <div id="container" className="flex flex-col w-full">
           {/* Thumbnail */}
@@ -54,7 +54,7 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
           {/* Video Info */}
           <div className="flex gap-3">
             {/* Channel Avatar */}
-            <div className="w-9 h-9 bg-neutral-300 rounded-full flex-shrink-0"></div>
+            <div className="w-9 h-9 bg-neutral-300 rounded-full shrink-0"></div>
 
             {/* Title and Meta */}
             <div className="flex-1 min-w-0">

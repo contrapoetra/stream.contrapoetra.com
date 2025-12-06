@@ -23,3 +23,5 @@ CREATE USER 'root'@'%' IDENTIFIED BY 'i.hate.sequels';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
+
+also `sudo chmod 777 backend/htdocs/uploads/videos/* backend/htdocs/uploads/thumbnails/*` so php can actually write to those folders
