@@ -1,7 +1,7 @@
 import VideoPlayer from '../components/VideoPlayer';
 import VideoThumbnail from '../components/VideoThumbnail';
 import UserComment from '../components/UserComment';
-import { useSearchParams } from 'react-router-dom'; // Explicitly re-import
+import { useSearchParams, Link } from 'react-router-dom'; // Explicitly re-import
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useContext, useEffect, useState } from 'react'; // Corrected line
 import apiService from '../services/api';
@@ -136,7 +136,9 @@ function Player() {
             <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
           </div>
           <div className="flex items-center gap-4 mt-3">
-            <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
+            <Link to={`/@${video.username}`} className="hover:opacity-80 transition-opacity">
+              <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
+            </Link>
             <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-neutral-600'} flex items-center gap-1`}>
               {video.views?.toLocaleString() || 0} views • {formatTimeAgo(video.created_at)}
             </span>
