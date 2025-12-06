@@ -323,6 +323,22 @@ if ($action === 'video' && $method === 'DELETE') {
     json_response(['message'=>'deleted']);
 }
 
+// comments: list
+if ($action === 'comments' && $method === 'GET') {
+    $videoId = intval($_GET['video_id'] ?? 0);
+    if (!$videoId) json_response(['error'=>'video_id required'], 400);
+
+    $stmt = $pdo->prepare("SELECT c.comment_id, c.video_id, c.comment_text, c.created_at, u.username 
+                           FROM Comments c 
+                           JOIN Users u ON u.user_id = c.user_id 
+                           WHERE c.video_id = ? 
+                           ORDER BY c.created_at DESC");
+    $stmt->execute([$videoId]);
+    $comments = $stmt->fetchAll();
+    
+    json_response(['comments'=>$comments]);
+}
+
 // comments: create
 if ($action === 'comment' && $method === 'POST') {
     $user_id = require_auth_user_id();

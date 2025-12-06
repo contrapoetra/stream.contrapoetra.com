@@ -14,6 +14,14 @@ export interface Video {
   created_at: string;
 }
 
+export interface Comment {
+  comment_id: number;
+  video_id: number;
+  username: string;
+  comment_text: string;
+  created_at: string;
+}
+
 export interface ApiResponse<T = any> {
   success?: boolean;
   message?: string;
@@ -22,10 +30,12 @@ export interface ApiResponse<T = any> {
     id: number;
     username: string;
     email: string;
+    subscriber_count?: number; // Added for channel data
   };
   token?: string;
   videos?: Video[];
   video?: Video;
+  comments?: Comment[];
   page?: number;
   limit?: number;
 }
@@ -105,24 +115,6 @@ class ApiService {
     }
   }
 
-  async getChannel(username: string): Promise<ApiResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}?action=channel&username=${username}`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error('Get channel failed:', error);
-      return {
-        success: false,
-        message: 'Failed to fetch channel',
-      };
-    }
-  }
-
   async getVideo(videoId: number): Promise<ApiResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}?action=video&id=${videoId}`, {
@@ -137,6 +129,41 @@ class ApiService {
       return {
         success: false,
         message: 'Failed to fetch video',
+      };
+    }
+  }
+
+  async getComments(videoId: number): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=comments&video_id=${videoId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Get comments failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch comments',
+      };
+    }
+  }
+
+  async getChannel(username: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=channel&username=${username}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Get channel failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch channel',
       };
     }
   }
@@ -222,6 +249,7 @@ class ApiService {
   }
 
   async addComment(videoId: number, commentText: string): Promise<ApiResponse> {
+    // This uses post method so Content-Type: application/json is added
     return this.post('comment', { video_id: videoId, comment_text: commentText });
   }
 

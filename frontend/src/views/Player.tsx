@@ -6,10 +6,14 @@ import { DarkModeContext } from '../context/DarkModeContext';
 import { useContext, useEffect, useState } from 'react'; // Corrected line
 import apiService from '../services/api';
 import { formatTimeAgo } from '../lib/utils';
-import { Lock } from 'lucide-react';
+import { Lock, Send } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 function Player() {
   const { darkMode } = useContext(DarkModeContext);
+  const { user: currentUser } = useAuth();
+  const { addToast } = useToast();
   const [searchParams] = useSearchParams();
   const videoId = searchParams.get('id');
 
@@ -17,6 +21,8 @@ function Player() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
     const fetchVideoData = async () => {
@@ -47,6 +53,12 @@ function Player() {
           setRelatedVideos(filtered.slice(0, 8));
         }
 
+        // Fetch comments
+        const commentsResponse = await apiService.getComments(parseInt(videoId));
+        if (commentsResponse.comments) {
+          setComments(commentsResponse.comments);
+        }
+
       } catch (err) {
         console.error('Error fetching video:', err);
         setError('Failed to load video');
@@ -57,6 +69,29 @@ function Player() {
 
     fetchVideoData();
   }, [videoId]);
+
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim()) return;
+    if (!videoId) return;
+
+    try {
+      const response = await apiService.addComment(parseInt(videoId), commentText);
+      if (response.message === 'commented' || response.comment_id) {
+        addToast('Comment posted!', 'success');
+        setCommentText('');
+        // Refresh comments
+        const commentsResponse = await apiService.getComments(parseInt(videoId));
+        if (commentsResponse.comments) {
+          setComments(commentsResponse.comments);
+        }
+      } else {
+        addToast('Failed to post comment', 'error');
+      }
+    } catch (error) {
+      console.error('Comment error:', error);
+      addToast('Error posting comment', 'error');
+    }
+  };
 
   if (loading) {
     return (
@@ -84,7 +119,7 @@ function Player() {
   };
 
   return (
-    <div id="player" className={`flex w-full min-h-screen pt-8 gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
+    <div id="player" className={`flex w-full min-h-screen pt-8 pb-24 gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
       <div id="content" className="flex flex-col w-3/4 pl-12">
         <div id="video" className="flex shrink-0 mt-5 mb-5 rounded-xl overflow-hidden">
           <VideoPlayer
@@ -113,13 +148,52 @@ function Player() {
             </div>
           )}
 
-          <div className="text-2xl font-bold mt-5 ${darkMode ? 'text-white' : 'text-black'}">Comments</div>
-          <div id="comments" className="flex flex-col mt-5">
-            <UserComment user="yuemichi" comment="this is so ass bro!!! 🥀" />
-            <UserComment user="sunnydrop" comment="ngl this kinda ate?? ✨" />
-            <UserComment user="voidling" comment="bro what did my eyes just witness 😭😭" />
-          </div>
-        </div>
+                    <div className={`mt-5 p-4 rounded-xl ${darkMode ? 'bg-neutral-900 border border-neutral-800' : 'bg-neutral-100 border border-neutral-200'}`}>
+                      <div className={`text-2xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-black'}`}>
+                        {comments.length} Comments
+                      </div>
+                      
+                      {currentUser ? (
+                        <div className="flex gap-4 mb-6">
+                          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {currentUser.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <textarea
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Add a comment..."
+                              className={`w-full p-3 rounded-lg border outline-none resize-none focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-neutral-800 border-neutral-700 text-white' : 'bg-white border-neutral-200 text-black'}`}
+                              rows={2}
+                            />
+                            <div className="flex justify-end mt-2">
+                              <button
+                                onClick={handleCommentSubmit}
+                                disabled={!commentText.trim()}
+                                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${!commentText.trim() ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                              >
+                                Comment
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-6">
+                          <a href="/auth" className="text-blue-500 hover:underline">Log in to comment</a>
+                        </div>
+                      )}
+          
+                      <div id="comments" className="flex flex-col gap-4">
+                        {comments.map((comment) => (
+                          <UserComment 
+                            key={comment.comment_id} 
+                            user={comment.username} 
+                            comment={comment.comment_text} 
+                            createdAt={comment.created_at}
+                          />
+                        ))}
+                      </div>
+                    </div>        </div>
       </div>
 
       <div id="sidebar" className="w-1/4 min-h-screen mt-5 sticky top-0 pr-12">
