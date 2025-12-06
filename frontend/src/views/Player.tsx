@@ -94,7 +94,7 @@ function Player() {
           <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
           <div className="flex items-center gap-4 mt-3">
             <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
-            <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <span className={`text-sm ${darkMode ? 'text-neutral-400' : 'text-neutral-600'}`}>
               {video.views?.toLocaleString() || 0} views • Just now
             </span>
           </div>

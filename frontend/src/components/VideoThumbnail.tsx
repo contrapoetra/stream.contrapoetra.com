@@ -37,7 +37,7 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
             <img
               src={getThumbnailUrl()}
               alt={title}
-              className="w-full aspect-video object-cover bg-gray-200 group-hover:scale-105 transition-transform duration-200"
+              className="w-full aspect-video object-cover bg-neutral-200 group-hover:scale-105 transition-transform duration-200"
               onError={(e) => {
                 // Fallback if image fails to load
                 (e.target as HTMLImageElement).src = `https://picsum.photos/320/180?random=${videoId}`;
@@ -52,15 +52,15 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath }: Video
           {/* Video Info */}
           <div className="flex gap-3">
             {/* Channel Avatar */}
-            <div className="w-9 h-9 bg-gray-300 rounded-full flex-shrink-0"></div>
+            <div className="w-9 h-9 bg-neutral-300 rounded-full flex-shrink-0"></div>
 
             {/* Title and Meta */}
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">
                 {title}
               </h3>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                <p className="hover:text-gray-900 dark:hover:text-gray-200">{channel}</p>
+              <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                <p className="hover:text-neutral-900 dark:hover:text-neutral-200">{channel}</p>
                 {views !== undefined && (
                   <p>{formatViews(views)} • Just now</p>
                 )}

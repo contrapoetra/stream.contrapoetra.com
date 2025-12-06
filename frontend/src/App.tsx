@@ -54,19 +54,19 @@ function AppContent() {
               </button>
             {isAuthenticated ? (
               <div className="relative" ref={profileRef}>
-                <button 
+                <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-neutral-800 hover:bg-neutral-700 text-white' : 'bg-neutral-200 hover:bg-neutral-300 text-black'}`}
                 >
                   <User size={20} />
                 </button>
-                
+
                 {isProfileOpen && (
                   <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 ${darkMode ? 'bg-neutral-800 text-white' : 'bg-white text-black'}`}>
                     {user && (
-                      <div className={`px-4 py-2 text-sm border-b ${darkMode ? 'border-neutral-700' : 'border-gray-100'}`}>
+                      <div className={`px-4 py-2 text-sm border-b ${darkMode ? 'border-neutral-700' : 'border-neutral-100'}`}>
                         <p className="font-medium truncate">{user.username}</p>
-                        <p className={`text-xs truncate ${darkMode ? 'text-neutral-400' : 'text-gray-500'}`}>{user.email}</p>
+                        <p className={`text-xs truncate ${darkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>{user.email}</p>
                       </div>
                     )}
                     <button
