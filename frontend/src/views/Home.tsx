@@ -94,6 +94,7 @@ function Home() {
                     thumbnailPath={video.thumbnail_path}
                     createdAt={video.created_at}
                     duration={video.duration}
+                    visibility={video.visibility}
                   />
                 ))
               ) : (

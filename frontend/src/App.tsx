@@ -6,6 +6,7 @@ import Home from './views/Home';
 import Player from './views/Player';
 import Auth from './views/Auth';
 import Upload from './views/Upload';
+import Channel from './views/Channel';
 import './App.css';
 import { User } from 'lucide-react';
 // import { Toggle } from "@/components/ui/toggle"
@@ -70,6 +71,15 @@ function AppContent() {
                         <p className={`text-xs truncate ${darkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>{user.email}</p>
                       </div>
                     )}
+                    {user && ( // Ensure user is defined before showing channel link
+                      <Link
+                        to={`/@${user.username}`}
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${darkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        Your Channel
+                      </Link>
+                    )}
                     <Link
                       to="/upload"
                       className={`block w-full text-left px-4 py-2 text-sm transition-colors ${darkMode ? 'text-white hover:bg-white/10' : 'text-black hover:bg-black/5'}`}
@@ -90,7 +100,7 @@ function AppContent() {
                 )}
               </div>
             ) : (
-              <Link to="/auth" className="auth-button-dark text-sm">Sign Up</Link>
+              <Link to="/auth" className="auth-button-dark text-sm">Log In</Link>
             )}
           </div>
         </nav>
@@ -104,6 +114,8 @@ function AppContent() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/subscriptions" element={<Home />} />
           <Route path="/upload" element={<Upload />} />
+          {/* Catch-all for channel pages or 404s */}
+          <Route path="/:handle" element={<Channel />} />
         </Routes>
       </div>
     </Router>

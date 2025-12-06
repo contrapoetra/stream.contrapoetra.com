@@ -1,11 +1,12 @@
 import VideoPlayer from '../components/VideoPlayer';
 import VideoThumbnail from '../components/VideoThumbnail';
 import UserComment from '../components/UserComment';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom'; // Explicitly re-import
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useContext, useEffect, useState } from 'react'; // Corrected line
 import apiService from '../services/api';
 import { formatTimeAgo } from '../lib/utils';
+import { Lock } from 'lucide-react';
 
 function Player() {
   const { darkMode } = useContext(DarkModeContext);
@@ -59,7 +60,7 @@ function Player() {
 
   if (loading) {
     return (
-      <div className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
+      <div className={`flex w-full min-h-screen pt-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
         <div className="text-xl">Loading video...</div>
       </div>
     );
@@ -67,7 +68,7 @@ function Player() {
 
   if (error || !video) {
     return (
-      <div className={`flex w-full min-h-screen mt-12 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
+      <div className={`flex w-full min-h-screen pt-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'} justify-center items-center`}>
         <div className="text-center">
           <div className="text-xl text-red-500 mb-4">{error || 'Video not found'}</div>
           <a href="/" className="text-blue-500 hover:underline">Back to Home</a>
@@ -83,7 +84,7 @@ function Player() {
   };
 
   return (
-    <div id="player" className={`flex w-full min-h-screen mt-12 gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
+    <div id="player" className={`flex w-full min-h-screen pt-8 gap-x-8 ${darkMode ? 'bg-neutral-950' : 'bg-neutral-50'}`}>
       <div id="content" className="flex flex-col w-3/4 pl-12">
         <div id="video" className="flex shrink-0 mt-5 mb-5 rounded-xl overflow-hidden">
           <VideoPlayer
@@ -93,10 +94,15 @@ function Player() {
         </div>
 
         <div>
-          <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
+          <div className="flex items-center gap-2">
+            {video.visibility === 'private' && (
+              <Lock size={24} className="text-red-500 flex-shrink-0" />
+            )}
+            <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>{video.title}</h1>
+          </div>
           <div className="flex items-center gap-4 mt-3">
             <h2 className={`${darkMode ? 'text-white' : 'text-black'}`}>{video.username}</h2>
-            <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-neutral-600'}`}>
+            <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-neutral-600'} flex items-center gap-1`}>
               {video.views?.toLocaleString() || 0} views • {formatTimeAgo(video.created_at)}
             </span>
           </div>
@@ -107,7 +113,7 @@ function Player() {
             </div>
           )}
 
-          <div className={`text-2xl font-bold mt-5 ${darkMode ? 'text-white' : 'text-black'}`}>Comments</div>
+          <div className="text-2xl font-bold mt-5 ${darkMode ? 'text-white' : 'text-black'}">Comments</div>
           <div id="comments" className="flex flex-col mt-5">
             <UserComment user="yuemichi" comment="this is so ass bro!!! 🥀" />
             <UserComment user="sunnydrop" comment="ngl this kinda ate?? ✨" />
@@ -129,6 +135,7 @@ function Player() {
               thumbnailPath={relatedVideo.thumbnail_path}
               createdAt={relatedVideo.created_at}
               duration={relatedVideo.duration}
+              visibility={relatedVideo.visibility}
             />
           ))}
         </div>

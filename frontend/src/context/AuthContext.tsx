@@ -71,11 +71,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('Response data:', data);
 
       if (response.ok && data.token) {
-        // Create minimal user object from response data
+        // Create user object from response data
         const user = {
           id: data.user_id,
-          email: email,
-          username: email.split('@')[0] // Use email prefix as username fallback
+          email: data.email,
+          username: data.username
         };
 
         console.log('Login successful, user:', user);

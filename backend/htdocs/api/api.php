@@ -55,7 +55,7 @@ if ($action === 'login' && $method === 'POST') {
         json_response(['error' => 'email and password required'], 400);
     }
 
-    $stmt = $pdo->prepare("SELECT user_id, password FROM Users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT user_id, username, email, password FROM Users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
@@ -64,7 +64,12 @@ if ($action === 'login' && $method === 'POST') {
     }
 
     $token = generate_jwt($user['user_id']);
-    json_response(['token' => $token, 'user_id' => (int)$user['user_id']]);
+    json_response([
+        'token' => $token, 
+        'user_id' => (int)$user['user_id'],
+        'username' => $user['username'],
+        'email' => $user['email']
+    ]);
 }
 
 // public: list videos with basic pagination
@@ -73,19 +78,66 @@ if ($action === 'videos' && $method === 'GET') {
         $page = max(1, intval($_GET['page'] ?? 1));
         $limit = min(100, intval($_GET['limit'] ?? 10));
         $offset = ($page - 1) * $limit;
+        $userIdFilter = intval($_GET['user_id'] ?? 0);
 
-        $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.duration, v.visibility, v.created_at
-                               FROM Videos v
-                               JOIN Users u ON u.user_id = v.user_id
-                               WHERE v.visibility = 'public'
-                               ORDER BY v.created_at DESC
-                               LIMIT ? OFFSET ?");
-        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-        $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+        // check for optional auth to show private videos
+        $currentUserId = 0;
+        $token = get_bearer_token();
+        if ($token) {
+            $decoded = decode_jwt($token);
+            if ($decoded && isset($decoded->sub)) {
+                $currentUserId = intval($decoded->sub);
+            }
+        }
+
+        $sql = "SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.duration, v.visibility, v.created_at
+                FROM Videos v
+                JOIN Users u ON u.user_id = v.user_id
+                WHERE (v.visibility = 'public' OR v.user_id = :current_user_id)";
+        
+        if ($userIdFilter > 0) {
+            $sql .= " AND v.user_id = :uid";
+        }
+        
+        $sql .= " ORDER BY v.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':current_user_id', $currentUserId, PDO::PARAM_INT);
+        if ($userIdFilter > 0) {
+            $stmt->bindValue(':uid', $userIdFilter, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $videos = $stmt->fetchAll();
 
         json_response(['page'=>$page,'limit'=>$limit,'videos'=>$videos]);
+    } catch (Exception $e) {
+        json_response(['error' => $e->getMessage()], 500);
+    }
+}
+
+// public: get channel info by username
+if ($action === 'channel' && $method === 'GET') {
+    try {
+        $username = trim($_GET['username'] ?? '');
+        if (!$username) json_response(['error' => 'username required'], 400);
+
+        // Get user info
+        $stmt = $pdo->prepare("SELECT user_id, username, email, created_at FROM Users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+
+        if (!$user) json_response(['error' => 'User not found'], 404);
+
+        // Get subscriber count
+        $stmtSub = $pdo->prepare("SELECT COUNT(*) as count FROM Subscriptions WHERE channel_id = ? AND status = 'active'");
+        $stmtSub->execute([$user['user_id']]);
+        $subCount = $stmtSub->fetch()['count'];
+
+        $user['subscriber_count'] = $subCount;
+
+        json_response(['user' => $user]);
     } catch (Exception $e) {
         json_response(['error' => $e->getMessage()], 500);
     }

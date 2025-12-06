@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatTimeAgo, formatDuration } from "../lib/utils";
+import { Lock } from "lucide-react";
 
 interface VideoThumbnailProps {
   className?: string;
@@ -10,9 +11,10 @@ interface VideoThumbnailProps {
   thumbnailPath?: string;
   createdAt: string;
   duration?: number;
+  visibility?: 'public' | 'private';
 }
 
-function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, createdAt, duration }: VideoThumbnailProps) {
+function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, createdAt, duration, visibility }: VideoThumbnailProps) {
   const formatViews = (viewCount: number) => {
     if (viewCount >= 1000000) {
       return `${(viewCount / 1000000).toFixed(1)}M views`;
@@ -48,9 +50,16 @@ function VideoThumbnail({ videoId, title, channel, views, thumbnailPath, created
                 (e.target as HTMLImageElement).src = `https://picsum.photos/320/180?random=${videoId}`;
               }}
             />
-            {/* Duration overlay */}
-            <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 text-white text-xs px-1 rounded">
-              {formatDuration(duration || 0)}
+            {/* Duration & Privacy overlay */}
+            <div className="absolute bottom-2 right-2 flex gap-1">
+              {visibility === 'private' && (
+                <div className="bg-black bg-opacity-80 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Lock size={10} /> Private
+                </div>
+              )}
+              <div className="bg-black bg-opacity-80 text-white text-xs px-1.5 py-0.5 rounded">
+                {formatDuration(duration || 0)}
+              </div>
             </div>
           </div>
 

@@ -83,9 +83,13 @@ class ApiService {
   }
 
   // Video methods
-  async getVideos(page: number = 1, limit: number = 12): Promise<ApiResponse> {
+  async getVideos(page: number = 1, limit: number = 12, userId?: number): Promise<ApiResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}?action=videos&page=${page}&limit=${limit}`, {
+      let url = `${API_BASE_URL}?action=videos&page=${page}&limit=${limit}`;
+      if (userId) {
+        url += `&user_id=${userId}`;
+      }
+      const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -97,6 +101,24 @@ class ApiService {
       return {
         success: false,
         message: 'Failed to fetch videos',
+      };
+    }
+  }
+
+  async getChannel(username: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=channel&username=${username}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Get channel failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch channel',
       };
     }
   }
