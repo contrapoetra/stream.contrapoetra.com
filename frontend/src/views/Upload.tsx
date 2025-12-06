@@ -2,10 +2,12 @@ import { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
-import { Upload as UploadIcon, Image as ImageIcon, Film } from 'lucide-react';
+import { Upload as UploadIcon, Image as ImageIcon, Film, Globe, Lock } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 function Upload() {
   const { darkMode } = useContext(DarkModeContext);
+  const { addToast } = useToast();
   const navigate = useNavigate();
   
   const [title, setTitle] = useState('');
@@ -20,13 +22,33 @@ function Upload() {
   
   const [duration, setDuration] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [backgroundVideos, setBackgroundVideos] = useState<any[]>([]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Generate placeholders for the background sliding animation
-  const placeholders = Array.from({ length: 20 });
+  // Fetch videos for background animation
+  useEffect(() => {
+    const fetchBackgroundVideos = async () => {
+      try {
+        const response = await apiService.getVideos(1, 20);
+        if (response.videos && response.videos.length > 0) {
+          setBackgroundVideos(response.videos);
+        }
+      } catch (error) {
+        console.error('Failed to load background videos', error);
+      }
+    };
+    fetchBackgroundVideos();
+  }, []);
+
+  // Generate placeholders if no videos, otherwise use videos. 
+  // Ensure we have enough items for the loop (at least 20)
+  const displayItems = backgroundVideos.length > 0 
+    ? Array.from({ length: 20 }, (_, i) => backgroundVideos[i % backgroundVideos.length])
+    : Array.from({ length: 20 });
   
   // Generate random speeds for each row (20s to 50s) and random start positions
   const rowConfigs = useMemo(() => {
@@ -35,6 +57,14 @@ function Upload() {
       delay: `${Math.floor(Math.random() * -50)}s`
     }));
   }, []);
+
+  // Helper to get thumbnail URL
+  const getThumbnailUrl = (path?: string) => {
+    if (!path) return null;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php';
+    const baseUrl = apiUrl.replace(/\/api\/api\.php$/, '').replace(/\/api\.php$/, '');
+    return `${baseUrl}/${path}`;
+  };
 
   // Cleanup object URLs
   useEffect(() => {
@@ -84,7 +114,7 @@ function Upload() {
       if (droppedFile.type.startsWith('video/')) {
         processVideoFile(droppedFile);
       } else {
-        alert('Please upload a valid video file.');
+        addToast('Please upload a valid video file', 'error');
       }
     }
   };
@@ -136,11 +166,13 @@ function Upload() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      alert('Please select a video file');
+      addToast('Please select a video file', 'error');
       return;
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+    
     try {
       const formData = new FormData();
       formData.append('video', file);
@@ -156,17 +188,20 @@ function Upload() {
         formData.append('thumbnail', autoThumbnailBlob, 'thumbnail.jpg');
       }
 
-      const response = await apiService.uploadVideo(formData);
+      const response = await apiService.uploadVideoWithProgress(formData, (progress) => {
+        setUploadProgress(progress);
+      });
 
       if (response.video_id || response.message === 'uploaded') {
-        alert('Video uploaded successfully!');
-        navigate('/');
+        addToast('Video uploaded successfully!', 'success');
+        // Delay redirect slightly to show 100% progress
+        setTimeout(() => navigate('/'), 500);
       } else {
-        alert(`Upload failed: ${response.error || response.message || 'Unknown error'}`);
+        addToast(`Upload failed: ${response.error || response.message || 'Unknown error'}`, 'error');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('An error occurred during upload.');
+      addToast('An error occurred during upload.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -187,11 +222,20 @@ function Upload() {
             }}
           >
             {/* Double the array to ensure seamless loop */}
-            {[...placeholders, ...placeholders].map((_, i) => (
+            {[...displayItems, ...displayItems].map((item, i) => (
               <div 
                 key={i} 
-                className="w-80 h-44 bg-yellow-500 rounded-lg flex-shrink-0"
-              />
+                className="w-80 h-44 bg-yellow-500 rounded-lg flex-shrink-0 overflow-hidden"
+              >
+                {item && item.thumbnail_path && (
+                  <img 
+                    src={getThumbnailUrl(item.thumbnail_path) || ''} 
+                    alt="" 
+                    className="w-full h-full object-cover opacity-80"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+              </div>
             ))}
           </div>
         ))}
@@ -326,33 +370,55 @@ function Upload() {
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-neutral-300' : 'text-neutral-700'}`}>Visibility</label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className={`flex-1 p-4 rounded-xl border-2 cursor-pointer transition-all ${visibility === 'public' ? (darkMode ? 'border-white bg-white/10' : 'border-black bg-black/5') : (darkMode ? 'border-neutral-800 hover:border-neutral-700' : 'border-neutral-200 hover:border-neutral-300')}`}>
                       <input 
                         type="radio" 
                         name="visibility" 
                         value="public"
                         checked={visibility === 'public'}
                         onChange={() => setVisibility('public')}
-                        className="accent-blue-600" // Or match theme
+                        className="hidden"
                       />
-                      <span className={darkMode ? 'text-neutral-300' : 'text-neutral-700'}>Public</span>
+                      <div className="flex items-center gap-3 justify-center">
+                        <Globe size={20} />
+                        <span className="capitalize font-medium">Public</span>
+                      </div>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    
+                    <label className={`flex-1 p-4 rounded-xl border-2 cursor-pointer transition-all ${visibility === 'private' ? (darkMode ? 'border-white bg-white/10' : 'border-black bg-black/5') : (darkMode ? 'border-neutral-800 hover:border-neutral-700' : 'border-neutral-200 hover:border-neutral-300')}`}>
                       <input 
                         type="radio" 
                         name="visibility" 
                         value="private"
                         checked={visibility === 'private'}
                         onChange={() => setVisibility('private')}
-                        className="accent-blue-600"
+                        className="hidden"
                       />
-                      <span className={darkMode ? 'text-neutral-300' : 'text-neutral-700'}>Private</span>
+                      <div className="flex items-center gap-3 justify-center">
+                        <Lock size={20} />
+                        <span className="capitalize font-medium">Private</span>
+                      </div>
                     </label>
                   </div>
                 </div>
               </div>
 
               <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                {isUploading && (
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className={`w-full rounded-full h-2.5 ${darkMode ? 'bg-neutral-800' : 'bg-neutral-200'}`}>
+                      <div 
+                        className={`h-2.5 rounded-full transition-all duration-300 ${darkMode ? 'bg-white' : 'bg-black'}`} 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+                
                 <button
                   type="submit"
                   disabled={!file || !title || isUploading}

@@ -152,6 +152,53 @@ class ApiService {
     }
   }
 
+  async uploadVideoWithProgress(
+    videoData: FormData, 
+    onProgress: (progress: number) => void
+  ): Promise<ApiResponse> {
+    const token = localStorage.getItem('auth_token');
+    
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}?action=upload`);
+      
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          onProgress(Math.round(percentComplete));
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response);
+            } catch (e) {
+                resolve({ success: false, message: 'Invalid JSON response', error: xhr.responseText });
+            }
+        } else {
+             try {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response); // Let caller handle API errors structure
+            } catch (e) {
+                resolve({ success: false, message: `Upload failed with status ${xhr.status}` });
+            }
+        }
+      };
+      
+      xhr.onerror = () => {
+        resolve({ success: false, message: 'Network error' });
+      };
+      
+      xhr.send(videoData);
+    });
+  }
+
   async addComment(videoId: number, commentText: string): Promise<ApiResponse> {
     return this.post('comment', { video_id: videoId, comment_text: commentText });
   }
