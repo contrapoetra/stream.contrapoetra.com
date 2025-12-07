@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { Trash2, Edit2, Save, X, Eye, Lock, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimeAgo } from '../lib/utils';
+import ConfirmDialog from '../components/ui/ConfirmDialog'; // Import ConfirmDialog
 
 function Manage() {
   const { darkMode } = useContext(DarkModeContext);
@@ -21,6 +22,10 @@ function Manage() {
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('public');
+
+  // Confirmation dialog state
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [videoToDeleteId, setVideoToDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -58,6 +63,7 @@ function Manage() {
     setEditingId(null);
     setEditTitle('');
     setEditDesc('');
+    setEditVisibility('public'); // Reset visibility too
   };
 
   const saveEdit = async (id: number) => {
@@ -85,20 +91,35 @@ function Manage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this video?")) return;
+  // Function to show the confirmation dialog
+  const confirmDelete = (id: number) => {
+    setVideoToDeleteId(id);
+    setShowConfirmDelete(true);
+  };
+
+  // Function to actually perform the deletion after confirmation
+  const executeDelete = async () => {
+    if (videoToDeleteId === null) return;
 
     try {
-      const response = await apiService.deleteVideo(id);
+      const response = await apiService.deleteVideo(videoToDeleteId);
       if (response.message === 'deleted') {
         addToast("Video deleted", "success");
-        setVideos(prev => prev.filter(v => v.video_id !== id));
+        setVideos(prev => prev.filter(v => v.video_id !== videoToDeleteId));
       } else {
         addToast("Delete failed", "error");
       }
     } catch (error) {
       addToast("Delete failed", "error");
+    } finally {
+      setShowConfirmDelete(false);
+      setVideoToDeleteId(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirmDelete(false);
+    setVideoToDeleteId(null);
   };
 
   return (
@@ -108,7 +129,7 @@ function Manage() {
           <h1 className="text-3xl font-bold">Channel Content</h1>
           <Link
             to="/upload"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="bg-neutral-600 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Upload Video
           </Link>
@@ -126,7 +147,7 @@ function Manage() {
                   <th className="px-6 py-4 text-right text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-200">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center">Loading content...</td>
@@ -140,7 +161,7 @@ function Manage() {
                     <tr key={video.video_id} className={`group ${darkMode ? 'hover:bg-neutral-800/50' : 'hover:bg-neutral-50'}`}>
                       <td className="px-6 py-4">
                         <div className="flex gap-4">
-                          <div className="w-32 aspect-video bg-black rounded-lg overflow-hidden flex-shrink-0 relative">
+                          <div className="w-32 aspect-video bg-black rounded-lg overflow-hidden shrink-0 relative">
                             {video.thumbnail_path && (
                               <img
                                 src={`${import.meta.env.VITE_API_URL || 'http://localhost:80/www/api/api.php'}`.replace(/\/api\/api\.php$/, '').replace(/\/api\.php$/, '') + '/' + video.thumbnail_path}
@@ -212,10 +233,11 @@ function Manage() {
                             </>
                           ) : (
                             <>
+                              {/* Changed onClick to confirmDelete */}
                               <button onClick={() => startEdit(video)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg" title="Edit">
                                 <Edit2 size={18} />
                               </button>
-                              <button onClick={() => handleDelete(video.video_id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg" title="Delete">
+                              <button onClick={() => confirmDelete(video.video_id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg" title="Delete">
                                 <Trash2 size={18} />
                               </button>
                             </>
@@ -230,6 +252,15 @@ function Manage() {
           </div>
         </div>
       </div>
+
+      {/* Render the Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDelete}
+        title="Delete Video"
+        message="Are you sure you want to delete this video? This action cannot be undone."
+        onConfirm={executeDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
