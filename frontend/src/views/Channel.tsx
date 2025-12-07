@@ -39,7 +39,7 @@ function Channel() {
           setIsSubscribed(channelResponse.user.is_subscribed || false);
 
           // Fetch channel videos using user_id
-          const videosResponse = await apiService.getVideos(1, 20, channelResponse.user.user_id); // Assuming getVideos now accepts userId
+          const videosResponse = await apiService.getVideos(1, 20, channelResponse.user.id); // Assuming getVideos now accepts userId
           if (videosResponse.videos) {
             setVideos(videosResponse.videos);
           }

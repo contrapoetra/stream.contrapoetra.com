@@ -10,7 +10,7 @@ import Upload from './views/Upload';
 import Channel from './views/Channel';
 import Search from './views/Search';
 import './App.css';
-import { User, Search as SearchIcon, X } from 'lucide-react';
+import { User, Search as SearchIcon } from 'lucide-react';
 import Manage from './views/Manage';
 // import { Toggle } from "@/components/ui/toggle"
 

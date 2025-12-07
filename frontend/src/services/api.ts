@@ -12,6 +12,7 @@ export interface Video {
   duration?: number;
   visibility: 'public' | 'private';
   created_at: string;
+  is_subscribed?: boolean;
 }
 
 export interface Comment {
@@ -25,12 +26,14 @@ export interface Comment {
 export interface ApiResponse<T = any> {
   success?: boolean;
   message?: string;
+  error?: string;
   data?: T;
   user?: {
     id: number;
     username: string;
     email: string;
     subscriber_count?: number; // Added for channel data
+    is_subscribed?: boolean;
   };
   token?: string;
   videos?: Video[];
@@ -38,6 +41,9 @@ export interface ApiResponse<T = any> {
   comments?: Comment[];
   page?: number;
   limit?: number;
+  channels?: any[];
+  video_id?: number;
+  comment_id?: number;
 }
 
 class ApiService {
@@ -229,7 +235,7 @@ class ApiService {
   ): Promise<ApiResponse> {
     const token = localStorage.getItem('auth_token');
     
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}?action=upload`);
       

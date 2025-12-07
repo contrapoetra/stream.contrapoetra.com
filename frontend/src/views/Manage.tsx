@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 import { DarkModeContext } from '../context/DarkModeContext';
 import { useAuth } from '../context/AuthContext';
-import apiService from '../services/api';
+import apiService, { type Video } from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { Trash2, Edit2, Save, X, Eye, Lock, Globe } from 'lucide-react';
+import { Trash2, Edit2, Save, X, Lock, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatTimeAgo } from '../lib/utils';
 import ConfirmDialog from '../components/ui/ConfirmDialog'; // Import ConfirmDialog

@@ -1,6 +1,6 @@
 import { useToast } from '../../context/ToastContext';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { useEffect, useState } from 'react';
+
 
 function ToastContainer() {
   const { toasts, removeToast } = useToast();
