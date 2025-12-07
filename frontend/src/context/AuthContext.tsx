@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log('Attempting login with:', { email, password: '***' });
 
-      const response = await fetch('/api/api.php?action=login', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '?action=login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/api.php?action=register', {
+      const response = await fetch(import.meta.env.VITE_API_URL + '?action=register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
