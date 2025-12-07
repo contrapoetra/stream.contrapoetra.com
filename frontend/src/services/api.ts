@@ -318,6 +318,24 @@ class ApiService {
   async unsubscribe(channelId: number): Promise<ApiResponse> {
     return this.post('unsubscribe', { channel_id: channelId });
   }
+
+  async search(query: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}?action=search&q=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Search failed:', error);
+      return {
+        success: false,
+        message: 'Search failed',
+      };
+    }
+  }
 }
 
 export const apiService = new ApiService();

@@ -439,5 +439,36 @@ if ($action === 'unsubscribe' && $method === 'POST') {
     json_response(['message'=>'unsubscribed']);
 }
 
+// search: videos and channels
+if ($action === 'search' && $method === 'GET') {
+    $q = trim($_GET['q'] ?? '');
+    if (!$q) {
+        json_response(['videos' => [], 'channels' => []]);
+    }
+
+    $term = '%' . $q . '%';
+
+    // Search Videos
+    $stmt = $pdo->prepare("SELECT v.video_id, v.user_id, u.username, v.title, v.description, v.file_path, v.thumbnail_path, v.views, v.duration, v.visibility, v.created_at
+                           FROM Videos v
+                           JOIN Users u ON u.user_id = v.user_id
+                           WHERE v.status != 'deleted' AND v.visibility = 'public'
+                           AND (v.title LIKE ? OR v.description LIKE ?)
+                           ORDER BY v.views DESC LIMIT 20");
+    $stmt->execute([$term, $term]);
+    $videos = $stmt->fetchAll();
+
+    // Search Channels (Users)
+    $stmt = $pdo->prepare("SELECT u.user_id, u.username, u.created_at,
+                           (SELECT COUNT(*) FROM Subscriptions s WHERE s.channel_id = u.user_id AND s.status = 'active') as subscriber_count
+                           FROM Users u
+                           WHERE u.username LIKE ?
+                           ORDER BY subscriber_count DESC LIMIT 10");
+    $stmt->execute([$term]);
+    $channels = $stmt->fetchAll();
+
+    json_response(['videos' => $videos, 'channels' => $channels]);
+}
+
 // fallback
 json_response(['error'=>'unknown endpoint or method','action'=>$action,'method'=>$method], 404);

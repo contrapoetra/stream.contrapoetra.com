@@ -1,14 +1,16 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { DarkModeContext } from './context/DarkModeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useContext, useState, useRef, useEffect } from 'react';
+import apiService from './services/api';
 import Home from './views/Home';
 import Player from './views/Player';
 import Auth from './views/Auth';
 import Upload from './views/Upload';
 import Channel from './views/Channel';
+import Search from './views/Search';
 import './App.css';
-import { User } from 'lucide-react';
+import { User, Search as SearchIcon, X } from 'lucide-react';
 import Manage from './views/Manage';
 // import { Toggle } from "@/components/ui/toggle"
 
@@ -17,11 +19,61 @@ function AppContent() {
   const { logout, isAuthenticated, user } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<{text: string, type: 'video' | 'channel'}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [debounceTimer, setDebounceTimer] = useState<number | undefined>(undefined);
+
+  const handleSearch = (e?: React.FormEvent, queryOverride?: string) => {
+    e?.preventDefault();
+    const q = queryOverride || searchQuery;
+    if (q.trim()) {
+        setShowSuggestions(false);
+        navigate(`/results?q=${encodeURIComponent(q)}`);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    
+    if (val.trim().length > 1) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        const timer = setTimeout(async () => {
+            try {
+                const res = await apiService.search(val);
+                const newSuggestions: {text: string, type: 'video' | 'channel'}[] = [];
+                // Prioritize channels? or Mix?
+                // Let's take top 2 channels and top 5 videos
+                if (res.channels) {
+                    res.channels.slice(0, 2).forEach((c: any) => newSuggestions.push({text: c.username, type: 'channel'}));
+                }
+                if (res.videos) {
+                    res.videos.slice(0, 5).forEach((v: any) => newSuggestions.push({text: v.title, type: 'video'}));
+                }
+                setSuggestions(newSuggestions);
+                setShowSuggestions(newSuggestions.length > 0);
+            } catch (err) {
+                console.error(err);
+            }
+        }, 300);
+        setDebounceTimer(timer as unknown as number);
+    } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -31,7 +83,6 @@ function AppContent() {
   }, []);
 
   return (
-    <Router>
       <div className={`flex flex-col w-screen h-screen overflow-x-hidden ${darkMode ? 'bg-neutral-900' : 'bg-neutral-100'}`}>
         <nav className={`${darkMode ? 'bg-neutral-900' : 'bg-neutral-50'} px-6 py-3 ${darkMode ? 'text-white' : 'text-black'} w-full flex items-center justify-between sticky top-0 z-50 shadow-sm`}>
           {/* Left: Logo */}
@@ -44,10 +95,43 @@ function AppContent() {
           </div>
 
           {/* Center: Search */}
-          <div className="flex-initial w-full max-w-xl flex justify-center px-4">
-            <div className={`flex w-full max-w-xl ${darkMode ? "bg-neutral-800" : "bg-neutral-200"} py-2 px-4 rounded-full border ${darkMode ? 'border-neutral-700' : 'border-neutral-300'}`}>
-              <input type="text" placeholder="Search" className={`w-full bg-transparent border-none outline-none ${darkMode ? 'text-white placeholder-neutral-400' : 'text-black placeholder-neutral-500'}`} />
-            </div>
+          <div className="flex-initial w-full max-w-xl flex justify-center px-4 relative" ref={searchRef}>
+            <form onSubmit={handleSearch} className={`flex w-full max-w-xl ${darkMode ? "bg-neutral-800" : "bg-neutral-200"} py-2 px-4 rounded-full border ${darkMode ? 'border-neutral-700' : 'border-neutral-300'} focus-within:ring-1 focus-within:ring-blue-500`}>
+              <input 
+                type="text" 
+                placeholder="Search" 
+                value={searchQuery}
+                onChange={handleInputChange}
+                onFocus={() => { if(suggestions.length > 0) setShowSuggestions(true); }}
+                className={`w-full bg-transparent border-none outline-none ${darkMode ? 'text-white placeholder-neutral-400' : 'text-black placeholder-neutral-500'}`} 
+              />
+              <button type="submit" className={`ml-2 ${darkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-black'}`}>
+                  <SearchIcon size={20} />
+              </button>
+            </form>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+                <div className={`absolute top-full left-4 right-4 mt-1 rounded-xl shadow-lg border overflow-hidden z-50 ${darkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-200'}`}>
+                    <ul>
+                        {suggestions.map((s, idx) => (
+                            <li key={idx}>
+                                <button 
+                                    className={`w-full text-left px-4 py-2 flex items-center gap-3 ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-black'}`}
+                                    onClick={() => {
+                                        setSearchQuery(s.text);
+                                        handleSearch(undefined, s.text);
+                                    }}
+                                >
+                                    <SearchIcon size={16} className="opacity-50" />
+                                    <span className="truncate flex-1">{s.text}</span>
+                                    {s.type === 'channel' && <span className="text-xs opacity-50 border border-current px-1 rounded">Channel</span>}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
           </div>
 
           {/* Right: Actions */}
@@ -116,18 +200,20 @@ function AppContent() {
           <Route path="/subscriptions" element={<Home />} />
           <Route path="/upload" element={<Upload />} />
           <Route path="/manage" element={<Manage />} />
+          <Route path="/results" element={<Search />} />
           {/* Catch-all for channel pages or 404s */}
           <Route path="/:handle" element={<Channel />} />
         </Routes>
       </div>
-    </Router>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </AuthProvider>
   );
 }
